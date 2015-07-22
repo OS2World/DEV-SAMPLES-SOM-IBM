@@ -1,0 +1,140 @@
+#ifndef hanres_idl
+#define hanres_idl
+//
+// COMPONENT_NAME: somtr::SAMPLES
+//
+// ORIGINS: 27
+//
+// Licensed Materials - Property of IBM                                     
+//                                                                          
+// 25H7-912, 5697-197 (EMEA), 17H5-843 (JAPAN)                              
+//                                                                          
+// (c) Copyright IBM Corp. 1995                                             
+//
+// DISCLAIMER OF WARRANTIES.
+// The following [enclosed] code is sample code created by IBM
+// Corporation. This sample code is not part of any standard or IBM
+// product and is provided to you solely for the purpose of assisting
+// you in the development of your applications.  The code is provided
+// "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+// NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+// FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+// THIS CODE.  IBM shall not be liable for any damages arising out of
+// your use of the sample code, even if they have been advised of the
+// possibility of such damages.
+//
+// DISTRIBUTION.
+// This sample code can be freely distributed, copied, altered, and
+// incorporated into other software, provided that it bears the above
+// Copyright notice and DISCLAIMER intact.
+// 
+
+//==============================================================================
+// DESCRIPTION: The HanoiResource class is used for registering the involvement
+//              of a Hanoi instance in a subtransaction and for handling
+//              subtransaction termination.  It may also store a before-image of
+//              a Hanoi instance.
+//==============================================================================
+
+#include <somtran.idl>       // Transaction Service interface
+#include <mcollect.idl>      // somf_MCollectible interface
+#include <somestrm.idl>      // Externalization Service interface
+#include "hancon.idl"        // HanoiConstants module
+
+interface Hanoi;
+
+//==============================================================================
+// Class: HanoiResource
+//
+// The HanoiResource class is used to register involvement in a transaction and
+// optionally to store a before-image of a Hanoi object.
+//
+// It inherits from:
+//   o SubtransactionAwareResource so that it can be registered as a resource to 
+//     the Transaction Service and be driven for subtransaction termination
+//     events.
+//   o somf_MCollectible so that it can be added to TranInv's collection class.
+//   o Streamable so its state can be written to and read from a stream.
+//==============================================================================
+interface HanoiResource : CosTransactions::SubtransactionAwareResource
+                        , somf_MCollectible
+                        , CosStream::Streamable 
+{
+  //============================================================================
+  // Method: HanoiResource::register_resource
+  //                                                                             
+  // Register with the specified transaction and note the Hanoi instance that
+  // the resource is related to.
+  //============================================================================
+  void register_resource( in CosTransactions::Coordinator coord
+                        , in Hanoi                        tower
+                        );
+
+  //============================================================================
+  // Method: HanoiResource::save_before_image
+  //                                                                             
+  // Store a before-image.
+  //============================================================================
+  void save_before_image(in long s[3][HanoiConstants::DISKS]);
+
+  //============================================================================
+  // Method: HanoiResource::apply_before_image
+  //                                                                             
+  // Apply the before-image.
+  //============================================================================
+  void apply_before_image();
+
+  //============================================================================
+  // Method: HanoiResource::self_destruct
+  //                                                                             
+  // Uninitialise and free the HanoiResource instance.  Although it is unusual
+  // for a method to free the instance it was called with, this is the only 
+  // simple way to clean up resource objects.  Part of uninitialising the 
+  // HanoiResource is to call the Hanoi instance to forget the involvement in 
+  // the current transaction and to drop the locks that the transaction 
+  // acquired.
+  //============================================================================
+  void self_destruct();
+
+  attribute boolean registered;
+
+  attribute Hanoi tower;
+
+  attribute CosTransactions::Coordinator coord;
+
+  readonly attribute boolean before_image_exists;
+
+  #ifdef __SOMIDL__
+  implementation
+  {
+    releaseorder: register_resource
+                , save_before_image
+                , apply_before_image
+                , self_destruct
+                , _get_registered
+                , _set_registered
+                , _get_tower
+                , _set_tower
+                , _get_coord
+                , _set_coord
+                , _get_before_image_exists
+                ;
+
+//# The following method from SOMObject is overridden 
+    somDefaultInit: override, init;
+
+//# The following methods from SubtransactionAwareResource are overridden
+    commit_subtransaction:    override;
+    rollback_subtransaction:  override;
+
+//# The following methods from Streamable are overridden
+    externalize_to_stream:    override;
+    internalize_from_stream:  override;
+
+    long spindle_before_image[3][HanoiConstants::DISKS];
+  
+    dllname = "Hanoi.dll";
+  };
+  #endif
+};
+#endif

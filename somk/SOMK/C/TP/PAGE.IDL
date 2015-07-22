@@ -1,0 +1,112 @@
+//
+//   COMPONENT_NAME: somx
+//
+//   ORIGINS: 27
+//
+//
+//    25H7912  (C)  COPYRIGHT International Business Machines Corp. 1992,1996,1996  
+//   All Rights Reserved
+//   Licensed Materials - Property of IBM
+//   US Government Users Restricted Rights - Use, duplication or
+//   disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+//
+/* @(#) somx/page.idl 2.6 12/26/95 17:55:39 [1/24/96 17:31:18] */
+
+/*
+ *
+ * DISCLAIMER OF WARRANTIES.
+ * The following [enclosed] code is sample code created by IBM
+ * Corporation. This sample code is not part of any standard or IBM
+ * product and is provided to you solely for the purpose of assisting
+ * you in the development of your applications.  The code is provided
+ * "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+ * NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+ * THIS CODE.  IBM shall not be liable for any damages arising out of
+ * your use of the sample code, even if they have been advised of the
+ * possibility of such damages.
+ *
+ * DISTRIBUTION.
+ * This sample code can be freely distributed, copied, altered, and
+ * incorporated into other software, provided that it bears the above
+ * Copyright notice and DISCLAIMER intact.
+ */
+
+
+//  This class is adapted from the book
+//    Class Construction in C and C++, Object Oriented Fundamentals
+//    by Roger Sessions, Copyright (c) 1992 Prentice Hall.
+//  Reprinted with permission.
+
+#ifndef page_idl
+#define page_idl
+
+#include <somobj.idl>
+
+interface textLine;
+interface TPWord;
+interface columnBlock;
+
+interface page : SOMObject
+{
+  void pgPrint(inout FILE output);
+  
+  void pgSetHeight(in long newHeight);
+  // Set the height of a page in characters.
+
+  void pgSetWidth(in long newWidth);
+  // Set the width of a page in characters.
+
+  void pgSetNumberOfColumns(in long ncolumns);
+  // Set the number of columns in a page.
+
+  void pgSetPageNumber(in TPWord newPageWord);
+  // Tell the page about a special word to be used to
+  // store page numbers.
+
+  columnBlock pgGetColumnBlock();
+  // Get the columnBlock being used by this page.
+
+  textLine pgGetHeaderBlock();
+  // Get the textLine representing the page header.
+
+  textLine pgGetFooterBlock();
+  // Get the textLine representing the page footer.
+
+#ifdef __SOMIDL__
+  implementation {
+
+    releaseorder: pgPrint,pgSetHeight,pgSetWidth,pgSetNumberOfColumns, 
+                  pgSetPageNumber,pgGetColumnBlock,pgGetHeaderBlock, 
+                  pgGetFooterBlock;
+
+    //# Class Modifiers
+    callstyle = oidl;
+    filestem = page;
+
+    passthru C_h =
+	"#include \"tpword.h\""
+        "#include \"textline.h\""
+        "#include \"colblk.h\"";
+
+    //# Internal Instance Variables
+    long height;                   
+    long width;                    
+    long ncolumns;                 
+    long currentCol;               
+    long pageNumber;               
+    textLine header;              
+    textLine footer;              
+    columnBlock columns;          
+    TPWord pageWord;              
+
+    //# Method Modifiers
+    somInit: override;
+    somUninit: override;
+    somDumpSelfInt: override;
+
+  };
+#endif /* __SOMIDL__ */
+};
+
+#endif  /* page_idl */

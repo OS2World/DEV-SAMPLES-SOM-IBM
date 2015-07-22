@@ -1,0 +1,61 @@
+#   @(#) 1.6 src/somples.os2/somi/c/irdump/makefile.bor, somx.somi, som2.5, s259604a 1/18/96 17:59:52 [1/24/96 17:51:57]
+#
+#   COMPONENT_NAME: somx
+#
+#   ORIGINS: 27
+#
+#
+#    25H7912  (C)  COPYRIGHT International Business Machines Corp. 1992,1996,1996  
+#   All Rights Reserved
+#   Licensed Materials - Property of IBM
+#   US Government Users Restricted Rights - Use, duplication or
+#   disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+#
+
+# DISCLAIMER OF WARRANTIES.
+# The following [enclosed] code is sample code created by IBM
+# Corporation. This sample code is not part of any standard or IBM
+# product and is provided to you solely for the purpose of assisting
+# you in the development of your applications.  The code is provided
+# "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+# NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+# THIS CODE.  IBM shall not be liable for any damages arising out of
+# your use of the sample code, even if they have been advised of the
+# possibility of such damages.
+#
+# DISTRIBUTION.
+# This sample code can be freely distributed, copied, altered, and
+# incorporated into other software, provided that it bears the above
+# Copyright notice and DISCLAIMER intact.
+
+# Makefile for: irdump
+
+CC      = $(BCCDIR)\bin\bcc
+CFLAGS  = -D_OS2 -w- -c -v -sm -I. -I$(SOMBASE)\include
+LINKER  = $(BCCDIR)\bin\tlink
+LFLAGEXE= /A:4 /S:360000 /ap /c /v /Toe /w-stk
+LIBLIST = $(BCCDIR)\lib\c2mt os2 $(SOMBASE)\lib\somtk
+OBJS    = $(BCCDIR)\lib\c02.obj irdump.obj
+
+irdump.exe: $(SOMBASE)\include\somcorba.bld $(OBJS)
+	scobj irdump.obj
+	$(LINKER) $(LFLAGEXE) $(OBJS), irdump.exe, NUL , $(LIBLIST)
+
+irdump.obj: irdump.c
+	$(CC) $(CFLAGS) $*.c
+
+clean:
+	-del irdump.obj irdump.exe som.ir >nul 2>&1
+
+$(SOMBASE)\include\somcorba.bld:
+	@echo This sample requires the CORBA-style C bindings
+	@echo created using the somcorba command.
+	@exit 1
+
+$(BCCDIR)\lib\c02.obj:
+ @echo This makefile needs BCCDIR to be set. Please do the following:
+ @echo set BCCDIR=where\borland\compiler\is\installed
+ @exit 1
+
+

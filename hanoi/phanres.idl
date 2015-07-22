@@ -1,0 +1,102 @@
+#ifndef phanres_idl
+#define phanres_idl
+//
+// COMPONENT_NAME: somtr::SAMPLES
+//
+// ORIGINS: 27
+//
+// Licensed Materials - Property of IBM                                     
+//                                                                          
+// 25H7-912, 5697-197 (EMEA), 17H5-843 (JAPAN)                              
+//                                                                          
+// (c) Copyright IBM Corp. 1995                                             
+//
+// DISCLAIMER OF WARRANTIES.
+// The following [enclosed] code is sample code created by IBM
+// Corporation. This sample code is not part of any standard or IBM
+// product and is provided to you solely for the purpose of assisting
+// you in the development of your applications.  The code is provided
+// "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+// NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+// FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+// THIS CODE.  IBM shall not be liable for any damages arising out of
+// your use of the sample code, even if they have been advised of the
+// possibility of such damages.
+//
+// DISTRIBUTION.
+// This sample code can be freely distributed, copied, altered, and
+// incorporated into other software, provided that it bears the above
+// Copyright notice and DISCLAIMER intact.
+// 
+
+//==============================================================================
+// DESCRIPTION: The PersistentHanoiResource class is used for registering the 
+//              involvement of a Hanoi instance in a top-level transaction and 
+//              for handling transaction termination.  It may also store a 
+//              before-image of a Hanoi instance.  It is a persistent object
+//              and is effectively a log for the Hanoi class.
+//==============================================================================
+
+#include <somdobj.idl>       // somdObject interface
+#include <somppo.idl>        // Persistence interface
+
+#include "hanres.idl"        // HanoiResource interface
+
+//==============================================================================
+// Class: PersistentHanoiResource
+//
+// The PersistentHanoiResource class is used to register involvement in a
+// top level transaction, optionally to store a before-image of a Hanoi object,
+// and to persist for use during recovery.
+//==============================================================================
+interface PersistentHanoiResource : HanoiResource
+                                  , somPersistencePO::PO
+{
+  //============================================================================
+  // Method: PersistentHanoiResource::recover
+  //                                                                             
+  // Perform recovery on behalf of a transaction.
+  //============================================================================
+  void recover();
+
+  readonly attribute boolean prepared;
+
+  #ifdef __SOMIDL__
+  implementation
+  {
+    releaseorder: recover
+                , _get_prepared
+                ;
+
+//# The following methods from SOMObject are overridden
+    somDefaultInit:           override, init;
+    somDestruct:              override;
+
+//# The following methods from SubtransactionAwareResource are overridden
+//# N.B. Inherit the default behaviour of commit_one_phase as this needs
+//#      no change.
+    prepare:                  override;
+    commit:                   override;
+    rollback:                 override;
+
+//# The following methods from HanoiResource are overridden
+    register_resource:        override;
+    self_destruct:            override;
+
+//# The following methods from Streamable are overridden
+    externalize_to_stream:    override;
+    internalize_from_stream:  override;
+
+//# The following methods from PO are overridden
+    init_for_object_creation:      override; 
+    init_for_object_reactivation:  override;
+    uninit_for_object_destruction: override;
+    uninit_for_object_passivation: override;
+
+    CosTransactions::RecoveryCoordinator recovery_coord;
+
+    dllname = "Hanoi.dll";
+  };
+  #endif
+};
+#endif

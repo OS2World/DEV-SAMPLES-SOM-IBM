@@ -1,0 +1,16 @@
+#if defined (_PLATFORM_OS2_)
+  #include <os2.h>
+#elif defined (_PLATFORM_WIN32_)
+  #include <windows.h>
+#endif
+
+#include "jmbase.h"
+
+
+#if defined (_PLATFORM_OS2_)
+POINTER IDP_DRAG      dragos2.ico
+BITMAP  IDI_SMALL     smallos2.bmp
+BITMAP  IDI_LARGE     largeos2.bmp
+BITMAP  IDI_THUMBNAIL thumbos2.bmp
+/* #elif defined (_PLATFORM_WIN32_) */
+#endif

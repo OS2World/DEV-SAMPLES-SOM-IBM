@@ -1,0 +1,273 @@
+#
+#  COMPONENT_NAME: somtr::SAMPLES
+#
+#  ORIGINS: 27
+#
+#  Licensed Materials - Property of IBM                                     
+#                                                                          
+#  25H7-912, 5697-197 (EMEA), 17H5-843 (JAPAN)                              
+#                                                                          
+#  (c) Copyright IBM Corp. 1995                                             
+#
+#  DISCLAIMER OF WARRANTIES.
+#  The following [enclosed] code is sample code created by IBM
+#  Corporation. This sample code is not part of any standard or IBM
+#  product and is provided to you solely for the purpose of assisting
+#  you in the development of your applications.  The code is provided
+#  "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+#  NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+#  FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+#  THIS CODE.  IBM shall not be liable for any damages arising out of
+#  your use of the sample code, even if they have been advised of the
+#  possibility of such damages.
+#
+#  DISTRIBUTION.
+#  This sample code can be freely distributed, copied, altered, and
+#  incorporated into other software, provided that it bears the above
+#  Copyright notice and DISCLAIMER intact.
+#
+
+This directory contains the source for the Object Transaction Service Tower 
+of Hanoi sample program which is described in the Transaction Service       
+chapter of the SOMobjects Developer's Toolkit User's Guide.                 
+
+The sample consists of a server and a client which uses the server.  Both 
+client and server are implemented in C++.
+
+The client uses the Transaction Service to begin and commit or rollback    
+transactions.  It calls methods on the Hanoi class in the server under     
+these transactions.                                                        
+
+The server contains the Hanoi class and is recoverable.  It implements    
+transactional behaviour using the Transaction Service, locking using the  
+Concurrency Control Service, and persistence using the Persistence        
+Service.                                                                  
+
+The sample attempts to show general techniques of Transaction Service 
+programming but does not attempt to cover all aspects of the Transaction
+Service.
+
+The recoverable server uses the Persistence Service's Implicit Restore     
+Persistent Object (IRPO) framework with an underlying persistent datastore 
+of a POSIX file system.  This datastore was chosen to minimise the         
+dependencies of the sample and to make it relatively self-contained.       
+
+However, a recoverable server would be more easily implemented using a      
+recoverable datastore such as DB2 together with the Persistence Service's   
+Implicit Persistent Object (IPO) framework.  In this case, it would not be  
+necessary to use the Concurrency Control Service if the locking provided by 
+the recoverable datastore was sufficient.  It would then not be necessary to
+record the involvement of the recoverable object in transactions or to      
+provide rollback or recovery.  This would all be handled by the recoverable 
+datastore in conjunction with the Persistence Service IPO framework.  IT    
+SHOULD BE STRESSED THAT USERS OF THE TRANSACTION SERVICE ARE NORMALLY       
+EXPECTED TO USE A RECOVERABLE DATASTORE.  THE SERVER IN THIS SAMPLE         
+ADDRESSES MANY OF THE CONCERNS OF PROVIDING A RECOVERABLE SERVER USING A    
+NON-RECOVERABLE DATASTORE.  IN DOING SO IT DEMONSTRATES MANY FEATURES OF THE
+TRANSACTION SERVICE WHICH WOULD NOT BE USED WITH A RECOVERABLE DATASTORE.   
+
+There are a number of auxilliary classes which the Hanoi class uses to
+implement recoverability:
+
+TranInv                 Maintains a map of transaction coordinators to the    
+                        resources that are registered with the corresponding  
+                        transactions on behalf of a particular Hanoi instance.
+
+TranCoor                A small class that enables a transaction coordinator to 
+                        be stored in the map maintained by a TranInv instance.
+
+HanoiResource           A subtransaction aware resource registered with nested
+                        transactions (and which therefore does not need to be 
+                        persistent).
+
+PersistentHanoiResource A resource class which inherits from HanoiResource as 
+                        well as a persistence class.  It is registered with 
+                        top-level transactions.
+
+
+
+GENERAL INFORMATION
+===================
+
+NOTE:  Please review the README in %SOMBASE%\samples\somd for general
+       information on setting up and running DSOM samples.  This
+       README assumes that information.
+
+
+
+TRANSACTION SERVICE SETUP
+=========================
+
+The default setup as described in the Transaction Service chapter 
+of the SOMobjects Developer's Toolkit User's Guide is sufficient for this 
+sample.
+
+
+
+CONCURRENCY SERVICE SETUP
+=========================
+
+The default setup as described in the Concurrency Control Service chapter 
+of the SOMobjects Developer's Toolkit User's Guide is sufficient for this 
+sample.
+
+
+
+PERSISTENCE SERVICE SETUP
+=========================
+
+The default setup as described in the Persistence Service chapter of the
+SOMobjects Developer's Toolkit User's Guide is sufficient for this sample.
+
+
+
+BUILDING THE SAMPLE
+===================
+
+The makefiles in this directory have been set up to build a dynamically
+loadable library and one sample client application:
+
+ - hanoi.dll
+
+   hanoi.dll is the dynamically loadable library which contains the Hanoi
+   server classes. The code contained in this library is loaded
+   by the DSOM server process (somossvr) when started. 
+
+ - client.exe
+
+   client is the sample client application.
+
+The makefiles also update the implementation repository by adding entries
+for the server aliases hanoiServer1 and hanoiClient1.  This must be 
+performed on the machine on which the sample will be executed.
+
+IBM Cset++
+----------
+
+Make the sample by issuing
+
+nmake
+
+IBM VisualAge C++
+-----------------
+
+If you are using IBM VisualAge C++, make the sample by issuing
+
+nmake -f makefile.age
+
+Be careful to set up the include and lib environment variables correctly in
+case there are older versions of SOMObjects files present in the VisualAge 
+directories.
+
+Borland C++
+-----------
+
+If you are using Borland C++, set the environment variable BORBASE to point
+at your BCOS2 directory, e.g.
+
+set BORBASE=c:\bcos2
+
+and make the sample by issuing
+
+make -fmakefile.bor
+
+MetaWare C++
+------------
+
+If you are using MetaWare High C/C++, make the sample by issuing
+
+nmake -f makefile.mtw
+
+and ensure that your include environment variable has the MetaWare base 
+include paths before the SOM include paths so that the compiler picks up its own
+versions of certain files such as stdlib.h and the MetaWare OS/2 include
+paths after the SOM include paths so that the compiler picks up the correct
+versions of SOM header files.
+
+WATCOM C++
+----------
+
+If you are using WATCOM C++, set the environment variable watcom to point
+at your watcom directory, e.g.
+
+set watcom=c:\watcom
+
+and make the sample by issuing
+
+wmake /f makefile.wat
+
+N.B. The WATCOM makefile uses the imod emitter as the generated DLL 
+initialisation function contains code specifically to support WATCOM.  
+The other makefiles use the initialisation function supplied with the 
+sample in initmod.cpp.
+
+
+
+EXECUTING THE SAMPLE
+====================
+
+Remember that the DSOM daemon, "somdd", must be started from the directory
+containing the ".dll" file produced by this sample. Or, you may update
+your LIBPATH environment variable to include the directory containing this
+sample's ".dll" file.
+
+To run the sample client application for the first time after updating the
+implementation repository (i.e. by building the sample), enter
+
+   start somossvr -i -a hanoiServer1
+
+and when the server is ready, enter
+
+   client -i
+
+To run the sample client application subsequently, enter
+
+   client 
+
+You may optionally supply the server alias for the client's own server:
+
+   client <-i> -a hanoiClient1
+
+or a server id:
+
+   client serverid
+
+Specifying no parameters is equivalent to specifying:
+
+   client -a hanoiClient1
+
+The option -d turns on tracing for the client.  The option -d on the 
+somossvr invocation turns on tracing for the server.
+
+If you wish to add your own server alias for either the server or
+the client's own server, you must add the aliases to the implementation
+repository in the same manner as the sample makefiles and you must start
+the server or the client with the -i option the first time you specify
+your own alias.
+
+
+
+SAMPLE FILES
+============
+
+readme             This file
+makefile           IBM Cset++ makefile
+makefile.age       IBM VisualAge C++ makefile
+makefile.bor       Borland C++ makefile
+makefile.mtw       MetaWare C++ makefile
+makefile.wat       WATCOM C++ makefile
+client.cpp         Client program
+hancon.idl         HanoiConstants module
+hanoi.idl          Hanoi class interface
+hanoi.cpp          Hanoi class implementation 
+traninv.idl        TranInv class interface
+traninv.cpp        TranInv class implementation
+hanres.idl         HanoiResource class interface
+hanres.cpp         HanoiResource class implementation
+phanres.idl        PersistentHanoiResource class interface
+phanres.cpp        PersistentHanoiResource class implementation
+trancoor.idl       TranCoord class interface
+trancoor.cpp       TranCoord class implementation
+initmod.cpp        DLL initialisation function
+buildsmp.cmd       Sample builder command file
+

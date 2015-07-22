@@ -1,0 +1,75 @@
+//
+//   COMPONENT_NAME: somx
+//
+//   ORIGINS: 27
+//
+//
+//    25H7912  (C)  COPYRIGHT International Business Machines Corp. 1992,1994,1996 
+//   All Rights Reserved
+//   Licensed Materials - Property of IBM
+//   US Government Users Restricted Rights - Use, duplication or
+//   disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+//
+/* @(#) somx/hello.idl 2.6 12/26/95 17:58:43 [1/24/96 17:31:22] */
+
+/*
+ *
+ * DISCLAIMER OF WARRANTIES.
+ * The following [enclosed] code is sample code created by IBM
+ * Corporation. This sample code is not part of any standard or IBM
+ * product and is provided to you solely for the purpose of assisting
+ * you in the development of your applications.  The code is provided
+ * "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+ * NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+ * THIS CODE.  IBM shall not be liable for any damages arising out of
+ * your use of the sample code, even if they have been advised of the
+ * possibility of such damages.
+ *
+ * DISTRIBUTION.
+ * This sample code can be freely distributed, copied, altered, and
+ * incorporated into other software, provided that it bears the above
+ * Copyright notice and DISCLAIMER intact.
+ */
+
+#ifndef hello_h
+#define hello_h
+
+#include <somcls.idl>
+
+interface M_Hello; 
+interface Hello : SOMObject
+{
+    string hello_();
+    attribute string hellomsg;
+#ifdef __SOMIDL__
+implementation
+{
+    releaseorder: hello_, _get_hellomsg, _set_hellomsg;
+    callstyle=oidl;
+    filestem = hello;
+    metaclass = M_Hello;
+    somInit: override;
+};
+#endif /* __SOMIDL__ */
+};
+
+interface M_Hello : SOMClass
+{
+    Hello HelloCreate(in string msg);
+    // This method creates an instance of the Hello class and
+    // uses the value of "msg" to initialise it.
+#ifdef __SOMIDL__
+implementation
+{
+   releaseorder: HelloCreate;
+   callstyle=oidl;
+   filestem = hello;
+   functionprefix=M_;
+   somInitMIClass: override;
+   somInit: override; // just a test for parent call macros
+};
+#endif /* __SOMIDL__ */
+};
+
+#endif /* hello_h */

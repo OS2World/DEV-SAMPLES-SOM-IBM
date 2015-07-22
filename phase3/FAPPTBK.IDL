@@ -1,0 +1,190 @@
+// 3/8/96 15:41:55
+/*
+#
+#
+#    25H7912  (C)  COPYRIGHT International Business Machines Corp. 1996
+#   All Rights Reserved
+#   Licensed Materials - Property of IBM
+#   US Government Users Restricted Rights - Use, duplication or
+#   disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+*/
+/*
+ *
+ *
+ * DISCLAIMER OF WARRANTIES.
+ * The following [enclosed] code is sample code created by IBM
+ * Corporation. This sample code is not part of any standard or IBM
+ * product and is provided to you solely for the purpose of assisting
+ * you in the development of your applications.  The code is provided
+ * "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+ * NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+ * THIS CODE.  IBM shall not be liable for any damages arising out of
+ * your use of the sample code, even if they have been advised of the
+ * possibility of such damages.
+ *
+ * DISTRIBUTION.
+ * This sample code can be freely distributed, copied, altered, and
+ * incorporated into other software, provided that it bears the above
+ * Copyright notice and DISCLAIMER intact.
+ */
+
+#ifndef fapptbk_idl
+#define fapptbk_idl
+
+#include <naming.idl>
+#include <appt.idl>
+#include <apptbook.idl>
+#include <snglicls.idl>
+
+interface AppointmentBookFactory : SOMObject
+{
+//  Exception
+   // The AppointmentBooks naming context has not been established
+    exception NoABContext {long ErrCode; char Reason[80];};
+   // Cannot create, a Book by this name already exists
+    exception BookExists {long ErrCode; char Reason[80];};
+   // Cannot find, a Book by this name does not exist
+    exception BookNOExist {long ErrCode; char Reason[80];};
+   // Input pointer is not a DistributedAppointmentBook
+    exception NotApptBook {long ErrCode; char Reason[80];};
+   // The Appointment naming context has not been established
+    exception NoApptContext {long ErrCode; char Reason[80];};
+   // Cannot create, an Appointment by this name already exists
+    exception AppointmentExists {long ErrCode; char Reason[80];};
+   // Cannot find, an Appointment by this name does not exist
+    exception AppointmentNOExist {long ErrCode; char Reason[80];};
+   // Input pointer is not a DistributedAppointment
+    exception NotAppointment {long ErrCode; char Reason[80];};
+
+  AppointmentBook createAppointmentBook(in string name)
+                                      raises(NoABContext,BookExists);
+   // This method creates a new appointment book using the given name.
+   // If an appointment book with the given name already exists, an
+   // exception is returned.
+
+   void deleteAppointmentBook(in AppointmentBook apptbook);
+   // This method deletes the given appointment book
+   // The book will not be deleted if there is more than one user of the book,
+   // checkInAppointmentBook is used by this method to check-in the book
+   // If the given appointment book does not exist, an exception is returned.
+
+   AppointmentBook checkOutAppointmentBook(in string name)
+                                      raises(NoABContext,BookNOExist);
+   // This method locates and returns the appointment book with the given name.
+   // If the appointment book doesn't exist, this method returns an exception.
+
+   void checkInAppointmentBook(in AppointmentBook apptbook)
+                                      raises(NoABContext);
+   // When a client program no longer needs access to an appointment book,
+   // the book will be freed from memory if this is the last user of the book
+   // this method is invoked.
+
+   void createBooksContext();
+   // Create the AppointmentBooks context off of the root naming context
+
+   AppointmentBook getNewAppointmentBook(in string name);
+   // This method is used by createAppointmentBook, to customize the NEW operation for the
+   // book override this method
+
+   AppointmentBook getExistingAppointmentBook(in string name) raises(BookNOExist);
+   // This method is used by and checkOutAppointmentBook
+   //  to customize the get existing book function override this method
+
+   void deleteBook(in AppointmentBook apptbook);
+   // This method is used by deleteAppointmentBook
+   // to customize the delete of an appointment book override this method
+
+   //Appointment methods
+
+   Meeting createMeeting()
+                                      raises(NoApptContext);
+   // This method creates a new meeting. The method will generate a unique name.
+   // If a meeting with the given name already exists, an
+   // exception is returned.
+
+   void deleteMeeting(in Meeting meet);
+   // This method deletes the given meeting
+   // The meeting will not be deleted if there is more than one user of the meeting,
+   // checkInAppointment is used by this method to check-in the meeting
+   // If the given meeting does not exist, an exception is returned.
+
+   ConferenceCall createConferenceCall()
+                                      raises(NoApptContext);
+   // This method creates a new meeting using the given name.
+   // If a meeting with the given name already exists, an
+   // exception is returned.
+
+   void deleteConferenceCall(in ConferenceCall ccall);
+   // This method deletes the given meeting
+   // The meeting will not be deleted if there is more than one user of the meeting,
+   // checkInAppointment is used by this method to check-in the meeting
+   // If the given meeting does not exist, an exception is returned.
+
+   Appointment checkOutAppointment(in string name)
+                                      raises(NoABContext,AppointmentNOExist);
+   // This method locates and returns the appointment with the given name.
+   // If the appointment book doesn't exist, this method returns an exception.
+
+   void checkInAppointment(in Appointment appt)
+                                      raises(NoApptContext);
+   // When a client program no longer needs access to an appointment,
+   // the book will be freed from memory if this is the last user of the appointment
+   // this method is invoked.
+
+   void createAppointmentContext();
+   // Create the Appointment context off of the root naming context
+
+   Meeting getNewMeeting(in string name);
+   // This method is used by createMeeting, to customize the NEW operation for the
+   // Meeting override this method
+
+   ConferenceCall getNewConferenceCall(in string name);
+   // This method is used by createConferenceCall, to customize the NEW operation for the
+   // ConferenceCall override this method
+
+   Appointment getExistingAppointment(in string name) raises(BookNOExist);
+   // This method is used by and checkOutAppointment
+   //  to customize the get existing appointment function override this method
+
+   void deleteAppointment(in Appointment appt);
+   // This method is used by deleteAppointment
+   // to customize the delete of an appointment override this method
+
+
+   #ifdef __SOMIDL__
+   implementation {
+       dllname = "apptbk.dll";
+       releaseorder: createAppointmentBook, deleteAppointmentBook,
+                  checkOutAppointmentBook,
+                  checkInAppointmentBook, createBooksContext,
+                  getNewAppointmentBook, getExistingAppointmentBook,
+                  deleteBook,
+                  createConferenceCall, deleteConferenceCall,
+                  createMeeting, deleteMeeting,
+                  checkOutAppointment, checkInAppointment,
+                  createAppointmentContext,
+                  getNewMeeting, getNewConferenceCall,
+                  getExistingAppointment, deleteAppointment;
+
+       // Method Modifiers
+       somDefaultInit: override;
+       somDestruct:    override;
+
+        metaclass=SOMMSingleInstance;
+       // Needs to be single instance because we only have one reference in
+       // the name service and we do not want multiple factories in the server
+
+       // Instance data
+       CosNaming::NamingContext  nameContext;
+       // This is the pointer to the "AppointmentBooks" naming context
+       // This is initialized by the createBooksContext method
+       CosNaming::NamingContext  AppointmentNameContext;
+       // This is the pointer to the "Appointment" naming context
+       // This is initialized by the createAppointmentContext method
+   };
+   #endif /* __SOMIDL__ */
+};
+#endif /* fapptbk_idl */
+
+

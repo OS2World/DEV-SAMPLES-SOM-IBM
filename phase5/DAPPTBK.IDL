@@ -1,0 +1,84 @@
+// 3/8/96 15:41:49
+/*
+#
+#
+#    25H7912  (C)  COPYRIGHT International Business Machines Corp. 1996
+#   All Rights Reserved
+#   Licensed Materials - Property of IBM
+#   US Government Users Restricted Rights - Use, duplication or
+#   disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+*/
+/*
+ *
+ *
+ * DISCLAIMER OF WARRANTIES.
+ * The following [enclosed] code is sample code created by IBM
+ * Corporation. This sample code is not part of any standard or IBM
+ * product and is provided to you solely for the purpose of assisting
+ * you in the development of your applications.  The code is provided
+ * "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+ * NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+ * THIS CODE.  IBM shall not be liable for any damages arising out of
+ * your use of the sample code, even if they have been advised of the
+ * possibility of such damages.
+ *
+ * DISTRIBUTION.
+ * This sample code can be freely distributed, copied, altered, and
+ * incorporated into other software, provided that it bears the above
+ * Copyright notice and DISCLAIMER intact.
+ */
+
+#ifndef dapptbk_idl
+#define dapptbk_idl
+
+#include <apptbook.idl>
+
+interface DistributedAppointmentBook : AppointmentBook
+{
+  // A DistributedAppointmentBook is an appointment book which has
+  // multiple users.  When a client uses this appointment book the number
+  // of users of this book is incremented with the incrementUsers method.
+  // When that client is through using the book, the number of users of the
+  // book is decremented with the decrementUsers method
+
+    attribute string bookName;
+    // This attribute maintains the name of the appointment book.
+
+    attribute string bookOwner;
+    // The userid of the owner of this appointment book.
+
+    attribute long numberOfUsers;
+    // This atrribute maintains the number of users of the book.
+
+    void incrementUsers();
+    //Increment the number of users that are currently accessing a distributed book.
+    void decrementUsers();
+    //Decrements the number of users that are currently accessing a distributed book
+
+    #ifdef __SOMIDL__
+      implementation {
+        dllname = "apptbk.dll";
+        releaseorder: _set_bookName, _get_bookName, _set_bookOwner,
+                      _get_bookOwner, incrementUsers, decrementUsers,
+                      _get_numberOfUsers, _set_numberOfUsers,
+                      addAppointment, deleteAppointment;
+
+        // Method Modifiers
+        somDefaultInit: override, init;
+        somDestruct:    override;
+        // override for distributed appointments.
+        addAppointment: override;
+        deleteAppointment: override;
+        // Attribute modifiers
+        bookName: noset;
+        bookOwner: noset;
+
+        // The factory modifier indicates which factory class can create
+        // instances of the DistributedAppointmentBook class
+        factory=AppointmentBookFactory;
+
+      };
+    #endif /* __SOMIDL__ */
+};
+#endif /* dapptbk_idl */

@@ -1,0 +1,265 @@
+#ifndef hanoi_idl
+#define hanoi_idl
+//
+// COMPONENT_NAME: somtr::SAMPLES
+//
+// ORIGINS: 27
+//
+// Licensed Materials - Property of IBM                                     
+//                                                                          
+// 25H7-912, 5697-197 (EMEA), 17H5-843 (JAPAN)                              
+//                                                                          
+// (c) Copyright IBM Corp. 1995                                             
+//
+// DISCLAIMER OF WARRANTIES.
+// The following [enclosed] code is sample code created by IBM
+// Corporation. This sample code is not part of any standard or IBM
+// product and is provided to you solely for the purpose of assisting
+// you in the development of your applications.  The code is provided
+// "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+// NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+// FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+// THIS CODE.  IBM shall not be liable for any damages arising out of
+// your use of the sample code, even if they have been advised of the
+// possibility of such damages.
+//
+// DISTRIBUTION.
+// This sample code can be freely distributed, copied, altered, and
+// incorporated into other software, provided that it bears the above
+// Copyright notice and DISCLAIMER intact.
+// 
+
+//==============================================================================
+// DESCRIPTION: The Hanoi class implements a recoverable Transaction Service
+//              server for the Tower of Hanoi puzzle.
+//==============================================================================
+
+#include <somtran.idl>       // Transaction Service interface
+#include <somlock.idl>       // Concurrency Control Service interface
+#include <sompipo.idl>       // Persistence Service interface
+#include <somestrm.idl>      // Externalization Service interface
+
+#include "hancon.idl"        // HanoiConstants module 
+#include "traninv.idl"       // TranInv interface
+#include "phanres.idl"       // PersistentHanoiResource interface
+
+//==============================================================================
+// Class: Hanoi
+//
+// The Hanoi class implements a recoverable Transaction Service server.
+//
+// Hanoi inherits from:
+//   o TransactionalObject so that the transaction context is propagated to it.
+//   o IRPO so that it behaves as an implicit restore persistent object.  
+//   o Streamable so that its state may be stored persistently and restored from 
+//     the persistent copy.
+//
+// Some of the methods are for use by client programs, e.g. move_single_disk,  
+// but others are for use by other classes used to implement the recoverable 
+// server.  For brevity in this sample, we make no distinction between these 
+// types of methods (for instance by publishing the general purpose methods in
+// a separate IDL file).
+//==============================================================================
+interface Hanoi : CosTransactions::TransactionalObject
+                , somPersistence::IRPO
+                , CosStream::Streamable 
+{
+  enum mode_type {READ, UPDATE};
+
+  //===========================================================================
+  // Exceptions 
+  //===========================================================================
+  exception SPINDLE_EMPTY {};  
+  exception DISK_ORDER {};
+
+  //============================================================================
+  // Method: Hanoi::display
+  //                                                                             
+  // Return a string portraying the current state.
+  //============================================================================
+  string display();
+
+  //============================================================================
+  // Method: Hanoi::get_full_spindle
+  //                                                                             
+  // Determine which spindle is holding all the disks.  Return -1 if no spindle 
+  // holds all the disks.
+  //============================================================================
+  long get_full_spindle(); 
+
+  //============================================================================
+  // Method: Hanoi::get_empty_spindle
+  //                                                                             
+  // Determine a spindle which is empty.  Return -1 if no spindle is empty.
+  //============================================================================
+  long get_empty_spindle(); 
+
+  //============================================================================
+  // Method: Hanoi::move_single_disk
+  //                                                                             
+  // Move a disk from one spindle to another.  
+  //
+  // Exceptions:
+  //   o SPINDLE_EMPTY if the source spindle is empty.
+  //   o DISK_ORDER if the disk would be placed on a smaller disk.
+  // 
+  // Whenever one of these exceptions is raised, the state of the spindles
+  // remains unchanged.
+  //
+  // If this method is invoked outside a transaction, it raises the 
+  // TransactionRequired standard exception and does not change the state of
+  // the spindles.
+  //============================================================================
+  void move_single_disk( in long from_spindle
+                       , in long to_spindle
+                       ) 
+                 raises( SPINDLE_EMPTY
+                       , DISK_ORDER
+                       );
+
+  //============================================================================
+  // Method: Hanoi::register_in_transaction
+  //                                                                             
+  // Register involvement in the specified transaction.  The return value is    
+  // non-null if and only if the registration was successful.  If a null        
+  // transaction coordinator is specified, the current transaction is assumed.  
+  // If there is no current transaction, the registration is never successful.  
+  //============================================================================
+  HanoiResource register_in_transaction(in CosTransactions::Coordinator coord);
+
+  //============================================================================
+  // Method: Hanoi::get_tran_inv
+  //                                                                             
+  // Get the address of the transaction involvement object for a Hanoi instance.
+  //============================================================================
+  TranInv get_tran_inv();
+
+  //============================================================================
+  // Method: Hanoi::prepare
+  //                                                                             
+  // Prepare to commit or rollback any recoverable updates.  If the Hanoi
+  // instance is in a suitable state to commit, vote to commit else vote to roll
+  // back.
+  // Store a persistent reference to the PersistentHanoiResource input parameter
+  // for use during recovery.
+  //============================================================================
+  CosTransactions::Vote prepare(in PersistentHanoiResource pres);
+
+  //============================================================================
+  // Method: Hanoi::rollback
+  //                                                                             
+  // Roll back to the value of the specified before-image.
+  // Store the Hanoi instance persistently.
+  //============================================================================
+  void rollback(in long s[3][HanoiConstants::DISKS]);
+
+  //============================================================================
+  // Method: Hanoi::rollback_subtransaction
+  //                                                                             
+  // Roll back to the value of the specified before-image.
+  // Do not store the Hanoi instance persistently.
+  //============================================================================
+  void rollback_subtransaction(in long s[3][HanoiConstants::DISKS]);
+
+  //============================================================================
+  // Method: Hanoi::delete_log
+  //                                                                             
+  // Zero the pointer to the PersistentHanoiResource representing the 
+  // involvement of the Hanoi instance in a top-level transaction.
+  // The persistent equivalent of this is the deletion of the 
+  // PersistentHanoiResource.  This ensures that the persistent object
+  // reference stored in the Hanoi instance's persistent data is invalid and
+  // will be converted to a zero pointer if the Hanoi instance is restored
+  // from its persistent data.
+  //============================================================================
+  void delete_log();
+
+  //============================================================================
+  // Method: Hanoi::uninvolve_in_transaction
+  //                                                                             
+  // Forget the involvement of the Hanoi instance in the specified transaction
+  // and drop any locks that were acquired on the Hanoi instance on behalf of
+  // the transactions.
+  //============================================================================
+  void uninvolve_in_transaction(in CosTransactions::Coordinator coord);
+
+  //============================================================================
+  // Method: Hanoi::drop_locks
+  //                                                                             
+  // Drop all the locks held by the specified transaction against the Hanoi
+  // instance.
+  //============================================================================
+  void drop_locks(in CosTransactions::Coordinator coord);
+
+  //============================================================================
+  // Method: Hanoi::get_transaction_coordinator
+  //                                                                             
+  // Get the transaction coordinator of the current transaction using the 
+  // current object cached in the Hanoi instance.
+  //============================================================================
+  CosTransactions::Coordinator get_transaction_coordinator();
+
+  attribute string name;
+
+  #ifdef __SOMIDL__
+  implementation
+  {
+    name: noset;
+    _get_name: object_owns_result;
+
+    releaseorder: display
+                , get_full_spindle
+                , get_empty_spindle
+                , move_single_disk
+                , register_in_transaction
+                , get_tran_inv
+                , prepare
+                , rollback
+                , rollback_subtransaction
+                , delete_log
+                , uninvolve_in_transaction
+                , drop_locks
+                , get_transaction_coordinator
+                , _set_name
+                , _get_name
+                ;
+
+//# The following methods from SOMObject are overridden 
+    somDefaultInit: override, init;
+    somDestruct:    override;
+
+//# The following methods from Streamable are overridden
+    externalize_to_stream:    override;
+    internalize_from_stream:  override;
+
+//# The following methods from IRPO are overridden
+    init_for_object_creation:      override; 
+    init_for_object_reactivation:  override;
+    uninit_for_object_destruction: override;
+    uninit_for_object_passivation: override;
+
+    long spindle[3][HanoiConstants::DISKS];
+
+    CosConcurrencyControl::LockSet lockset;
+
+    TranInv tran_inv;
+
+//# The following data member effectively represents a log for the Hanoi 
+//# instance.  If it is non-null, a transaction has updated the Hanoi
+//# instance and has been prepared in which case the persistent Hanoi 
+//# data contains the after-image and the PersistentHanoiResource contains
+//# the before-image.  When it is no longer needed it is set to null to
+//# indicate that no recovery is necessary.  A single data member is 
+//# sufficient since a Hanoi instance may be updated by at most one 
+//# top-level transaction at once.
+    PersistentHanoiResource pres;
+
+    CosTransactions::Current current;
+
+    dllname = "Hanoi.dll";
+  };
+  #endif // ifdef __SOMIDL__
+};
+
+#endif // ifndef hanoi_idl
+

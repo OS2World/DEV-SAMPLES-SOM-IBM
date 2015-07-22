@@ -1,0 +1,92 @@
+// 3/8/96 09:36:29
+/*
+#
+#
+#    25H7912  (C)  COPYRIGHT International Business Machines Corp. 1996
+#   All Rights Reserved
+#   Licensed Materials - Property of IBM
+#   US Government Users Restricted Rights - Use, duplication or
+#   disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+*/
+/*
+ *
+ *
+ * DISCLAIMER OF WARRANTIES.
+ * The following [enclosed] code is sample code created by IBM
+ * Corporation. This sample code is not part of any standard or IBM
+ * product and is provided to you solely for the purpose of assisting
+ * you in the development of your applications.  The code is provided
+ * "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+ * NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+ * THIS CODE.  IBM shall not be liable for any damages arising out of
+ * your use of the sample code, even if they have been advised of the
+ * possibility of such damages.
+ *
+ * DISTRIBUTION.
+ * This sample code can be freely distributed, copied, altered, and
+ * incorporated into other software, provided that it bears the above
+ * Copyright notice and DISCLAIMER intact.
+ */
+#ifndef appt_idl
+#define appt_idl
+
+#include <morder.idl>
+
+// Appointment must have the characteristics of the somf_MOrderableCollectible
+// class since appointments need to be ordered.  Since somf_TSortedSequence
+// is being used this is required.
+interface Appointment : somf_MOrderableCollectible
+{
+  typedef unsigned long IDType;
+  string bufferize();  // This method returns the external representation of the
+                       // appointment as a string.  The caller should free the
+                       // returned string with SOMFree.
+
+// Attributes:
+  attribute short year;    // The year of the appointment
+  attribute short month;   // The month of the appointment
+  attribute short day;     // The day of the appointment
+  attribute unsigned long start;  // The starting time of the appointment
+  attribute unsigned long end;    // The ending time of the appointment
+  attribute string subject;       // The appointment subject
+  attribute IDType apptId; // Integer which uniquely identifies a specific
+                           // appointment in the appointment-book
+
+#ifdef __SOMIDL__
+// Implementation
+  implementation {
+                   // The purpose of dllname, informs SOM the name of the dll
+                   // into which the object code for this class will be built.
+    dllname = "apptbk.dll";
+
+  // This section is designed to ensure that the base classes can be modified
+  // without forcing derived classes to be recompiled.  If a new method is added,
+  // the name should be added to the end of the list.
+    releaseorder: bufferize,_get_year,_set_year,
+                  _get_month,_set_month,_get_day,_set_day,
+                  _get_start,_set_start,_get_end,_set_end,
+                  _get_subject,_set_subject,_get_apptId,_set_apptId;
+// Methods modifiers:
+   somDefaultInit: override, init;
+   somDestruct:    override;
+   somfHash:       override;    // Override required by somf_TDictionary to
+                                // return an entry look-up value
+
+    // These overrides are required by somf_TSortedSequece so that
+    // the elements can be inserted in the list with the correct relationship
+   somfIsEqual:    override;
+   somfIsLessThan: override;
+   somfIsGreaterThan: override;
+
+// Attribute modifiers
+   subject: noset; // Do not generate a set method automatically for this
+                   // attribute. The default set method generated for strings
+                   // are usually inappropriate.
+
+// Instance data
+   string bp;  // Buffer used by the bufferize method.
+  };
+#endif /* __SOMIDL__ */
+};
+#endif  /* appt_idl */

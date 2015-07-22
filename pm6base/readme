@@ -1,0 +1,49 @@
+Base Classes and Frameworks
+
+Installation on OS/2
+
+  These parts use the Component Install Utility that is part of PartMeister
+  beta 6 and later. If you have not installed PartMeister, install it
+  first, or follow the instructions for installation on Windows.
+
+    type CINSTALL JMBASE.INS
+    Fill in the directories requested and press Install.
+
+Installation on Windows
+
+  The CINSTALL program has not been ported to Windows yet, so the install
+  process must be done manually. PartMeister for Windows has the templates
+  installed as part of its install, so these may be deleted from the
+  distribution package (DEL BASENC*.T* - remember the .T).
+
+  Make a directory for the base parts, and copy all the files to that
+  directory, for example
+
+    MD \BASEPART
+    CD \BASEPART
+    MD JMBASE
+    CD JMBASE
+    COPY \TEMP\*.*
+
+  Make a directory named PUBLIC to hold shared files
+
+    MD \BASEPART\PUBLIC
+
+  No files need to be copied to the public directory, it will be populated
+  when the base classes are created using the make utility.
+
+
+Building the base classes
+
+  The makefile is initially set up for no debugging and an OS/2 deliverable.
+  These two settings may be changed at the top of the makefile, along with
+  the directories used in the build process. Check these settings, then
+  run nmake or make to build the parts (IBM NMAKE on OS/2, IBM NMAKE on
+  Windows and Opus MAKE on Windows have been tested).
+
+
+Documentation
+
+  Documentation is provided in the BASENC.HTM file (this file is in HTML
+  format and may be viewed by loading it into any Web browser or HTML
+  viewer).

@@ -1,0 +1,122 @@
+#ifndef traninv_idl
+#define traninv_idl
+//
+// COMPONENT_NAME: somtr::SAMPLES
+//
+// ORIGINS: 27
+//
+// Licensed Materials - Property of IBM                                     
+//                                                                          
+// 25H7-912, 5697-197 (EMEA), 17H5-843 (JAPAN)                              
+//                                                                          
+// (c) Copyright IBM Corp. 1995                                             
+//
+// DISCLAIMER OF WARRANTIES.
+// The following [enclosed] code is sample code created by IBM
+// Corporation. This sample code is not part of any standard or IBM
+// product and is provided to you solely for the purpose of assisting
+// you in the development of your applications.  The code is provided
+// "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+// NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+// FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+// THIS CODE.  IBM shall not be liable for any damages arising out of
+// your use of the sample code, even if they have been advised of the
+// possibility of such damages.
+//
+// DISTRIBUTION.
+// This sample code can be freely distributed, copied, altered, and
+// incorporated into other software, provided that it bears the above
+// Copyright notice and DISCLAIMER intact.
+// 
+
+//==============================================================================
+// DESCRIPTION: The TranInv class records which transactions have accessed a 
+//              Hanoi instance and the corresponding resource objects which 
+//              are registered with the Transaction service.
+//==============================================================================
+
+#include <somtran.idl>       // Transaction Service interface                   
+#include <somlock.idl>       // Concurrency Control Service interface
+#include <thash.idl>         // somf_THashTable interface
+
+#include "hanres.idl"        // HanoiResource interface
+
+interface Hanoi;
+
+//==============================================================================
+// Class: TranInv
+//
+// The TranInv class records which transactions have accessed a recoverable
+// object and creates the corresponding resource objects.  
+//==============================================================================
+interface TranInv : SOMObject
+{
+  //============================================================================
+  // Method: TranInv::involve
+  //                                                                             
+  // Record a transaction's involvement with a recoverable object and return
+  // a Hanoi resource object suitable for registration with the transaction.
+  //============================================================================
+  HanoiResource involve( in CosTransactions::Coordinator coord
+                       , in Hanoi                        tower
+                       );
+
+  //============================================================================
+  // Method: TranInv::uninvolve
+  //                                                                             
+  // Delete a transaction's involvement with a recoverable object.
+  //============================================================================
+  void uninvolve(in CosTransactions::Coordinator coord);
+
+  //============================================================================
+  // Method: TranInv::get_resource
+  //                                                                             
+  // Return the address of the resource associated with a transaction.  If the 
+  // transaction is not known, return 0.
+  //============================================================================
+  HanoiResource get_resource(in CosTransactions::Coordinator coord);
+
+  //============================================================================
+  // Method: TranInv::suspend
+  //                                                                             
+  // Suspend any current transaction's involvement with the current thread.
+  //============================================================================
+  CosTransactions::Control suspend();
+
+  //============================================================================
+  // Method: TranInv::resume
+  //                                                                             
+  // Resume any transaction's involvement with the current thread.
+  //============================================================================
+  void resume(in CosTransactions::Control control);
+
+  #ifdef __SOMIDL__
+  implementation
+  {
+    releaseorder: involve
+                , uninvolve
+                , get_resource
+                , suspend
+                , resume
+                ;
+
+//# The following method from SOMObject is overridden 
+    somDefaultInit: override, init;
+    somDestruct:    override;
+
+//# map from TranCoord to HanoiResource implemented using a hash table
+    somf_THashTable resmap;
+
+//# Lockset used to serialise access to the hash table.
+//# N.B. Could use a semaphore, but this provides an example of non-transactional
+//#      use of the Concurrency Control service provided the current transaction 
+//#      is suspended and resumed around each use of the lockset.
+    CosConcurrencyControl::LockSet latch;
+
+    CosTransactions::Current current;
+    
+    dllname = "Hanoi.dll";
+  };
+  #endif
+};
+#endif

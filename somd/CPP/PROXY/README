@@ -1,0 +1,149 @@
+#
+#   COMPONENT_NAME: somx
+#
+#   ORIGINS: 27
+#
+#
+#    25H7912  (C)  COPYRIGHT International Business Machines Corp. 1992,1996,1996  
+#   All Rights Reserved
+#   Licensed Materials - Property of IBM
+#   US Government Users Restricted Rights - Use, duplication or
+#   disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+#
+/*
+ *  @(#) 1.14 src/somples.os2/somd/cpp/proxy/readme, somx.somd, som2.5, s259604a 1/10/96 20:40:24 [1/24/96 17:50:58]
+ */
+
+/*
+ *
+ * DISCLAIMER OF WARRANTIES.
+ * The following [enclosed] code is sample code created by IBM
+ * Corporation. This sample code is not part of any standard or IBM
+ * product and is provided to you solely for the purpose of assisting
+ * you in the development of your applications.  The code is provided
+ * "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+ * NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+ * THIS CODE.  IBM shall not be liable for any damages arising out of
+ * your use of the sample code, even if they have been advised of the
+ * possibility of such damages.
+ *
+ * DISTRIBUTION.
+ * This sample code can be freely distributed, copied, altered, and
+ * incorporated into other software, provided that it bears the above
+ * Copyright notice and DISCLAIMER intact.
+ */
+
+NOTE:  Please review the README file in %SOMBASE%\samples\somd for general
+       information on setting up and running DSOM samples.  This README
+       assumes that information.
+
+Sample summary
+--------------
+This directory contains a simple example of how to write a
+user-supplied proxy object. In this particular example, the proxy
+object maintains a local, unshared copy of the attribute
+(attribute_long) defined in the remote object (Bar) while forwarding
+the method call (_method1) to the remote object. The result is that
+when multiple clients are talking to the same remote Bar object, each
+client has a local copy of the attribute but all clients share the Bar
+object's implementation of _method1. Setting the attribute in one
+client's proxy does not affect the value of the attribute in other
+proxies.
+
+The user-supplied proxy was created by using multiple inheritance between
+SOMDClientProxy and the target object (in this case Bar). The idl and
+implementation files for Bar are in bar.idl and bar.cpp respectively.
+The idl file for SOMDClientProxy is in %SOMBASE%\include.  The idl and
+implementation files for the proxy are in barproxy.idl and barproxy.cpp
+respectively.
+
+Normally one would use the "abstractparents" modifier to indicate that abstract
+inheritance should be used for the target class (e.g., Bar) of the user-defined
+proxy class, but in this sample, abstract inheritance is not desired because
+we want the proxy class (Bar__Proxy) to inherit the instance data of the Bar
+class to permit caching of instance data in the proxy.
+
+When you build a user-supplied proxy, you only need to override methods
+introduced by the target interface which you do not want forwarded or
+that require special processing.  In the implementation section of
+the "barproxy.idl" file, "_set_attribute_long" and "_get_attribute_long"
+are overridden to prevent the methods from being forwarded.
+
+Method method1 doesn't need to be overridden (it would be forwarded
+automatically), but we do it to illustrate how to explicitly cause a
+method to be forwarded.
+
+This sample is described in the SOMobjects Developer Toolkit Users Guide
+under the section "Creating user-supplied proxies".  However, this sample
+has changed class Foo to Bar and class Foo__Proxy to Bar__Proxy.  This name
+change was made to avoid class name conflicts with the sample in the "dii"
+subdirectory.
+
+Building the sample
+-------------------
+BEFORE making the sample, the DSOM daemon "somdd" must be running (either
+in the background or in a separate OS/2 command window) and the Name Service
+must have been configured using som_cfg, as described in the README file in
+%SOMBASE%\samples\somd.  This is because the makefile for the sample
+registers the servers and classes in the Name Service.
+
+The makefile in this directory will build the client executable and
+the dynamically loadable library. They are:
+
+- tstproxy.exe (the DSOM client program)
+
+- objs.dll (DLL containing the Bar and Bar__Proxy classes used by the
+            server and the DSOM runtime)
+
+Note that for simplicity the Bar and Bar__Proxy classes have been bundled
+in the same dll.  Usually, each would be in a separate dll.  To determine
+whether a user-supplied proxy class exists, the DSOM runtime checks the
+LIBPATH for a DLL containing the class named "<targetClassName>__Proxy".
+If it is found, it is loaded instead of dynamically generating a proxy
+class.
+
+Running the sample
+------------------
+Before running the sample, remember to start the DSOM daemon "somdd" in this
+directory. If the daemon is currently running you must first kill it and
+restart it in this directory.  This is because the daemon "somdd" will
+start the sample server "somdsvr" which will attempt to load the objs dll.
+The objs dll needs to reside in the LIBPATH of the sample server.
+
+To start the daemon, enter:
+
+   start /c /f somdd
+
+Once the daemon is started, start two or more copies of tstproxy in
+separate windows.
+
+When the first instance of tstproxy is executed it creates the remote
+object Bar in the server and writes the string form of its object
+reference in a file called: fileref. The next instance of tstproxy
+started finds the reference in fileref and creates a proxy to connect
+to the (previously created) Bar object.
+
+After terminating all the instances of tstproxy, somdsvr, and somdd,
+be sure to remove fileref prior to running this test again.  Otherwise,
+the next time tstproxy is executed, it will try to connect to the object
+whose reference is in fileref - which will no longer exist.
+
+Cleaning up the sample
+----------------------
+BEFORE cleaning up the sample, the DSOM daemon "somdd" must be running (either
+in the background or in a separate OS/2 command window).  This is because the
+makefile for the sample deregisters the servers and classes in the Name Service.
+
+Terminate all the instances of somdsvr.  This is because the servers will have
+the som.ir and dlls locked so they can't be erased.  To clean up the sample,
+enter "nmake clean".  This will delete all non-source files and deregister itself
+from the Name Service and Implementation Repository.
+
+The daemon "somdd" will restart the naming server to deregister the sample.
+
+Notes
+-----
+
+There is no makefile for the Watcom compiler (makefile.wat) due to
+differences in how va_list arguments are handled.

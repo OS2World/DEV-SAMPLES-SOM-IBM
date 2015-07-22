@@ -1,0 +1,127 @@
+#
+#   COMPONENT_NAME: somx
+#
+#   ORIGINS: 27
+#
+#
+#    25H7912  (C)  COPYRIGHT International Business Machines Corp. 1992,1994,1996 
+#   All Rights Reserved
+#   Licensed Materials - Property of IBM
+#   US Government Users Restricted Rights - Use, duplication or
+#   disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+#
+/*
+ *  @(#) 1.5 src/somples.os2/somd/cpp/peerthrd/readme, somx.somd, som2.5, s259604a 1/6/96 13:07:21 [1/24/96 18:29:48]
+ */
+
+/*
+ *
+ * DISCLAIMER OF WARRANTIES.
+ * The following [enclosed] code is sample code created by IBM
+ * Corporation. This sample code is not part of any standard or IBM
+ * product and is provided to you solely for the purpose of assisting
+ * you in the development of your applications.  The code is provided
+ * "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+ * NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+ * THIS CODE.  IBM shall not be liable for any damages arising out of
+ * your use of the sample code, even if they have been advised of the
+ * possibility of such damages.
+ *
+ * DISTRIBUTION.
+ * This sample code can be freely distributed, copied, altered, and
+ * incorporated into other software, provided that it bears the above
+ * Copyright notice and DISCLAIMER intact.
+ */
+
+NOTE:  Please review the README file in %SOMBASE%\samples\somd for general
+       information on setting up and running DSOM samples.  This README
+       assumes that information.
+
+       This sample requires the DSOM Work Group Enabler.
+
+Sample summary:
+---------------
+The "peer" example demonstrates
+    (1) DSOM server application which also functions as a client
+    (2) ONEWAY methods (caller does not wait for a response)
+    (3) Lifecyle factory services
+
+Two servers, each having a timer setup to "pop" at fixed intervals set
+by the user, notify each other when their timers pop.
+
+Making the sample:
+------------------
+BEFORE making the sample, the DSOM daemon "somdd" must be running (either
+in the background or in a separate OS/2 command window) and the Name Service
+must have been configured using som_cfg, as described in the README file in
+%SOMBASE%\samples\somd.  This is because the makefile for the sample
+registers the servers and classes in the Name Service.
+
+The makefile in this directory will build a server executable and a
+dynamically loadable library.  They are:
+
+ - peer.exe (the peer server executable)
+
+ - peerserv.dll (the library to be loaded by the server)
+
+Entering "nmake" will not only build the above but it will also
+build the interface and implementation repositories that the
+servers will utilize.  It will register two servers which are
+identical except for their aliases: peerServerT1 and peerServerT2.
+
+Running the sample:
+-------------------
+
+Before running the sample, remember to start the DSOM daemon "somdd" in this
+directory. If the daemon is currently running you must first kill it and
+restart it in this directory.
+
+To start the daemon, enter:
+
+   start /c /f somdd
+
+Once the daemon is started, you can run the test in two ways.  You can start
+both peer servers manually or you can start one peer server and have
+that peer server automatically start the second peer server.  In the second
+case, if the first peer starts the second peer, the second peer's window
+will have to be brought to the forground to answer its prompts.
+
+In using the first case, create two windows and start peer in both windows by
+typing "peer".  When asked for the alias of the server in the first window,
+reply "peerServerT1".  In the other window reply "peerServerT2".  When asked for
+the alias of the "other" server in window one, reply "peerServerT2".  In the
+other window, reply "peerServerT1".  Note at this time, if only one peer
+was started, the second peer would be instantiated.  Set the timer interval
+for both servers (e.g., 2 seconds in one and 3 seconds in the other).
+Hit Enter in both windows to set them off.
+
+Whenever peerServerT1's time interval expires, peerServerT1 calls the 
+noteTimeout method of the server object in PeerServer2.  peerServerT2's server 
+object executes this method by displaying a message on its window. The message 
+is:
+
+"Received timeout notification from peerServerT1"
+
+Whenever, peerServerT2's time interval expires, a similar sequence occurs. The
+two servers will run until you interrupt them (e.g., via control-C).
+
+To run the peer sample across two different machines, set the
+"hostname" entries in the Implementation Repository to the two
+different machine names, and start somdd on both machines prior
+to starting the peer program on each machine.
+
+Cleaning up the sample
+----------------------
+BEFORE cleaning up the sample, the DSOM daemon "somdd" must be running (either
+in the background or in a separate OS/2 command window).  This is because the
+makefile for the sample deregisters the servers and classes in the Name Service.
+
+Terminate all the instances of somdsvr.  This is because the servers will have
+the som.ir and dlls locked so they can't be erased.  To clean up the sample,
+enter "nmake clean".  This will delete all non-source files and deregister
+the servers from the Name Service and Implementation Repository.
+
+The daemon "somdd" will restart the naming server to deregister the sample.
+
+

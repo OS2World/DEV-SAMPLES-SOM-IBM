@@ -1,0 +1,39 @@
+LIBRARY jmbase INITINSTANCE
+DESCRIPTION 'jmBase Class Library'
+PROTMODE
+DATA MULTIPLE NONSHARED LOADONCALL
+EXPORTS
+   jmBaseIteratorCClassData
+   jmBaseIteratorClassData
+   jmBaseIteratorNewClass
+   jmBaseListCClassData
+   jmBaseListClassData
+   jmBaseListNewClass
+   jmBaseFrameInfoCClassData
+   jmBaseFrameInfoClassData
+   jmBaseFrameInfoNewClass
+   jmBaseImageCClassData
+   jmBaseImageClassData
+   jmBaseImageNewClass
+   jmBaseNonContainerCClassData
+   jmBaseNonContainerClassData
+   jmBaseNonContainerNewClass
+   M_jmBaseNonContainerCClassData
+   M_jmBaseNonContainerClassData
+   M_jmBaseNonContainerNewClass
+   jmBaseContainerCClassData
+   jmBaseContainerClassData
+   jmBaseContainerNewClass
+   M_jmBaseContainerCClassData
+   M_jmBaseContainerClassData
+   M_jmBaseContainerNewClass
+   jmBaseEmbeddedFramesIteratorCClassData
+   jmBaseEmbeddedFramesIteratorClassData
+   jmBaseEmbeddedFramesIteratorNewClass
+   LogOpen
+   LogString
+   LogShort
+   LogUShort
+   LogLong
+   LogULong
+   LogFixed

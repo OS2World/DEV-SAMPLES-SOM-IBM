@@ -1,0 +1,288 @@
+# 3/11/96 12:27:19
+#
+#
+#    25H7912  (C)  COPYRIGHT International Business Machines Corp. 1996
+#   All Rights Reserved
+#   Licensed Materials - Property of IBM
+#   US Government Users Restricted Rights - Use, duplication or
+#   disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+#
+#
+#  DISCLAIMER OF WARRANTIES.
+#  The following [enclosed] code is sample code created by IBM
+#  Corporation. This sample code is not part of any standard or IBM
+#  product and is provided to you solely for the purpose of assisting
+#  you in the development of your applications.  The code is provided
+#  "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+#  NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+#  FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+#  THIS CODE.  IBM shall not be liable for any damages arising out of
+#  your use of the sample code, even if they have been advised of the
+#  possibility of such damages.
+#
+#  DISTRIBUTION.
+#  This sample code can be freely distributed, copied, altered, and
+#  incorporated into other software, provided that it bears the above
+#  Copyright notice and DISCLAIMER intact.
+#
+# This make file has settings for IBM VisualAge C++ version 3.x for OS/2
+# It may be used with the nmake program.
+#
+
+# General settings
+MAKEFILE     = makefile.age
+SYS          = OS2
+CC           = icc
+CPPC         = icc
+SC           = sc
+LINKER       = ilink
+IMPLIB       = implib
+RM           = del
+OBJ          = obj
+CFLAGS       = $(DLL_CFLAGS)
+CPPFLAGS     = $(DLL_CPPFLAGS)
+SCFLAGS      = -S100000 -p
+TARGETS      = $(DLL_TARGET).$(DLL_EXT) $(EXE_TARGET).$(EXE_EXT) somdimpl
+CLEANFILES   = $(DLL_TARGET).$(DLL_LIBEXT) $(DLL_TARGET).$(DLL_DEF) $(DLL_INITMOD).* $(TARGETS)
+
+# EXE build settings
+EXE_CFLAGS   = -W3 -c -Ti+ -Q+ -Gd- -Gm+ -Gs+ -Sm -Ss+
+EXE_CPPFLAGS = -W3 -c -Ti+ -Q+ -Gd- -Gm+ -Gs+ -Sm
+EXE_OBJS     = testutil.obj phase4.obj checkenv.obj
+EXE_LFLAGS   = /DE /exepack /packd /packc /align:4 /stack:360000 /pm:vio /noe /noi /nol /map /OUT:$(EXE_TARGET).$(EXE_EXT) /EXEC
+EXE_SYSOBJS  =
+EXE_LIBS     = apptbk.lib somtk.lib os2386.lib
+EXE_TARGET   = sample
+EXE_EXT      = exe
+EXE_IDLS     =
+EXE_CSRC     = testutil.c
+EXE_CPPSRC   = phase4.cpp checkenv.cpp
+
+# DLL build settings
+DLL_INITMOD  = sinitmod
+DLL_CFLAGS   = -W3 -c -Ti+ -Q+ -Gd- -Gm+ -Gs+ -Ge- -Sm -Ss+
+DLL_CPPFLAGS = -W3 -c -Ti+ -Q+ -Gd- -Gm+ -Gs+ -Ge- -Sm
+DLL_LFLAGS   = /DE /exepack /packd /packc /align:4 /stack:360000 /pm:vio /noe /noi /nol /map /OUT:$(DLL_TARGET).$(DLL_EXT) /DLL
+DLL_OBJS     =  appt.obj mtg.obj ccall.obj key.obj apptbook.obj dappt.obj dmtg.obj dccall.obj pappt.obj pccall.obj pmtg.obj dapptbk.obj pdapptbk.obj fapptbk.obj pfapptbk.obj sinitmod.obj checkenv.obj smapptbk.obj
+DLL_SYSOBJS  =
+DLL_LIBS     = somtk.lib os2386.lib db2api.lib
+DLL_TARGET   = apptbk
+DLL_EXT      = dll
+DLL_LIBEXT   = lib
+DLL_DEF      = def
+DLL_IDLS     = appt.idl mtg.idl ccall.idl key.idl apptbook.idl dappt.idl dmtg.idl dccall.idl pappt.idl pccall.idl pmtg.idl dapptbk.idl pdapptbk.idl fapptbk.idl pfapptbk.idl smapptbk.idl
+DLL_CSRC     =
+DLL_CPPSRC   = appt.cpp mtg.cpp ccall.cpp key.cpp apptbook.cpp dappt.cpp dmtg.cpp dccall.cpp pappt.cpp pccall.cpp pmtg.cpp dapptbk.cpp pdapptbk.cpp fapptbk.cpp pfapptbk.cpp smapptbk.cpp
+
+all: $(TARGETS)
+
+# DLL target
+$(DLL_TARGET).$(DLL_EXT): $(DLL_OBJS) $(DLL_TARGET).$(DLL_LIBEXT)
+	$(LINKER) $(DLL_LFLAGS) $(DLL_OBJS) $(DLL_SYSOBJS) $(DLL_LIBS) $(DLL_TARGET).$(DLL_DEF)
+
+# DLL "Import" library target
+$(DLL_TARGET).$(DLL_LIBEXT): $(DLL_TARGET).$(DLL_DEF)
+	$(IMPLIB) $(DLL_TARGET).$(DLL_LIBEXT) $(DLL_TARGET).$(DLL_DEF)
+
+# DLL exports file
+$(DLL_TARGET).$(DLL_DEF): $(DLL_IDLS)
+	$(SC) $(SCFLAGS) -s$(DLL_DEF) -mdll=$(DLL_TARGET) $(DLL_IDLS)
+
+# DLL SOMInitModule function
+$(DLL_INITMOD).$(OBJ): $(DLL_INITMOD).c
+	$(CC) $(DLL_CFLAGS) $*.c
+
+$(DLL_INITMOD).c: $(DLL_IDLS)
+	$(SC) $(SCFLAGS) -simod -mdll=$(DLL_TARGET) -mimod=$@ $(DLL_IDLS)
+
+# EXE target
+$(EXE_TARGET).$(EXE_EXT): $(EXE_OBJS)
+	$(LINKER) $(EXE_LFLAGS) $(EXE_OBJS) $(EXE_SYSOBJS) $(EXE_LIBS)
+
+# Build DSOM Implementation Repository
+somdimpl:
+           -regimpl -A -i BookServer -p somossvr.exe -v somOS::Server -m on
+	-regimpl -a -i BookServer -c Appointment
+	-regimpl -a -i BookServer -c Meeting
+	-regimpl -a -i BookServer -c ConferenceCall
+	-regimpl -a -i BookServer -c Appt_Key
+	-regimpl -a -i BookServer -c AppointmentBook
+	-regimpl -a -i BookServer -c DistributeAppointment
+	-regimpl -a -i BookServer -c DistributedMeeting
+	-regimpl -a -i BookServer -c DistributedConferenceCall
+	-regimpl -a -i BookServer -c PersistentAppointment
+	-regimpl -a -i BookServer -c PersistentConferenceCall
+	-regimpl -a -i BookServer -c PersistentMeeting
+	-regimpl -a -i BookServer -c DistributedAppointmentBook
+	-regimpl -a -i BookServer -c PersistentDistributedAppointmentBook
+	-regimpl -a -i BookServer -c AppointmentBookFactory
+	-regimpl -a -i BookServer -c PersistentAppointmentBookFactory
+	-regimpl -a -i BookServer -c BookMapper::smapptbk
+	-regimpl -a -i BookServer -c AppointmentMapper::smappt
+	-regimpl -a -i BookServer -c somPersistenceDB2::PDS_DB2
+	-regimpl -a -i BookServer -c somPersistenceDB2::PID_DB2
+	-regimpl -a -i BookServer -c somLifeCycle::FactoryFinder	
+        -regimpl -A -i BookClient -p sample.exe -v somOS::Server -m on
+	@echo somdimpl > somdimpl
+
+# Clean up files that can be re-built
+clean: cleanfiles cleanimpl
+
+cleanfiles:
+	-del *.$(OBJ) >nul 2>&1
+	-del $(EXE_IDLS:.idl=.h) $(DLL_IDLS:.idl=.h) >nul 2>&1
+	-del $(EXE_IDLS:.idl=.ih) $(DLL_IDLS:.idl=.ih) >nul 2>&1
+	-del $(EXE_IDLS:.idl=.xh) $(DLL_IDLS:.idl=.xh) >nul 2>&1
+	-del $(EXE_IDLS:.idl=.xih) $(DLL_IDLS:.idl=.xih) >nul 2>&1
+	-del *.ir >nul 2>&1
+	-del $(CLEANFILES) >nul 2>&1
+
+cleanimpl:
+	-regimpl -D -i BookServer
+          -regimpl -D -i BookClient
+
+# Suffix rules for building source files
+.SUFFIXES: .$(OBJ) .cpp .c .xih .xh .ih .h .idl
+
+.cpp.$(OBJ):
+	$(CPPC) $(CPPFLAGS) $<
+
+
+.c.$(OBJ):
+	$(CC) $(CFLAGS) $<
+
+
+.idl.cpp:
+	$(SC) $(SCFLAGS) -usir;xc $<
+
+
+.idl.c:
+	$(SC) $(SCFLAGS) -usir;c $<
+
+
+.idl.xih:
+	$(SC) $(SCFLAGS) -usir;xih $<
+
+
+.idl.xh:
+	$(SC) $(SCFLAGS) -usir;xh $<
+
+
+.idl.ih:
+	$(SC) $(SCFLAGS) -usir;ih $<
+
+
+.idl.h:
+	$(SC) $(SCFLAGS) -usir;h $<
+
+
+# Dependencies follow
+phase4.obj: phase4.cpp pappt.xh appt.xh pmtg.xh dmtg.xh mtg.xh dappt.xh pccall.xh dccall.xh ccall.xh key.xh dapptbk.xh apptbook.xh pdapptbk.xh fapptbk.xh pfapptbk.xh testutil.h samptype.h
+	$(CPPC) $(EXE_CPPFLAGS) phase4.cpp
+
+testutil.obj: testutil.c testutil.h
+	$(CC) $(EXE_CFLAGS) testutil.c
+
+checkenv.obj: checkenv.cpp appt.xh mtg.xh ccall.xh apptbook.xh key.xh samptype.h
+	$(CPPC) $(EXE_CPPFLAGS) checkenv.cpp
+
+appt.xih: appt.idl
+appt.xh: appt.idl
+
+mtg.xih: mtg.idl appt.idl
+mtg.xh: mtg.idl appt.idl
+
+ccall.xih: ccall.idl appt.idl
+ccall.xh: ccall.idl appt.idl
+
+key.xih: key.idl appt.idl
+key.xh: key.idl appt.idl
+
+apptbook.xih: apptbook.idl mtg.idl appt.idl ccall.idl
+apptbook.xh: apptbook.idl mtg.idl appt.idl ccall.idl
+
+dappt.xih: appt.idl dappt.idl
+dappt.xh: appt.idl dappt.idl
+
+dmtg.xih: appt.idl dappt.idl mtg.idl dmtg.idl
+dmtg.xh: appt.idl dappt.idl mtg.idl dmtg.idl
+
+dccall.xih: appt.idl dappt.idl ccall.idl dccall.idl
+dccall.xh: appt.idl dappt.idl ccall.idl dccall.idl
+
+pappt.xih: appt.idl pappt.idl
+pappt.xh: appt.idl pappt.idl
+
+pccall.xih: appt.idl pappt.idl dappt.idl ccall.idl dccall.idl pccall.idl
+pccall.xh: appt.idl pappt.idl dappt.idl ccall.idl dccall.idl pccall.idl
+
+pmtg.xih: appt.idl pappt.idl dappt.idl mtg.idl dmtg.idl pmtg.idl
+pmtg.xh: appt.idl pappt.idl dappt.idl mtg.idl dmtg.idl pmtg.idl
+
+dapptbk.xih: apptbook.idl mtg.idl appt.idl ccall.idl dapptbk.idl
+dapptbk.xh: apptbook.idl mtg.idl appt.idl ccall.idl dapptbk.idl
+
+pdapptbk.xih: apptbook.idl mtg.idl appt.idl ccall.idl dapptbk.idl pdapptbk.idl
+pdapptbk.xh: apptbook.idl mtg.idl appt.idl ccall.idl dapptbk.idl pdapptbk.idl
+
+fapptbk.xih: appt.idl apptbook.idl mtg.idl ccall.idl fapptbk.idl
+fapptbk.xh: appt.idl apptbook.idl mtg.idl ccall.idl fapptbk.idl
+
+pfapptbk.xih: appt.idl apptbook.idl mtg.idl ccall.idl fapptbk.idl pfapptbk.idl
+pfapptbk.xh: appt.idl apptbook.idl mtg.idl ccall.idl fapptbk.idl pfapptbk.idl
+
+smapptbk.xih: smapptbk.idl
+smapptbk.xh: smapptbk.idl
+
+appt.obj: appt.cpp appt.xih appt.xh samptype.h
+	$(CPPC) $(DLL_CPPFLAGS) appt.cpp
+
+mtg.obj: mtg.cpp mtg.xih mtg.xh appt.xh samptype.h
+	$(CPPC) $(DLL_CPPFLAGS) mtg.cpp
+
+ccall.obj: ccall.cpp ccall.xih ccall.xh appt.xh samptype.h
+	$(CPPC) $(DLL_CPPFLAGS) ccall.cpp
+
+key.obj: key.cpp appt.xh key.xih key.xh
+	$(CPPC) $(DLL_CPPFLAGS) key.cpp
+
+apptbook.obj: apptbook.cpp appt.xh mtg.xh ccall.xh apptbook.xih apptbook.xh samptype.h key.xh
+	$(CPPC) $(DLL_CPPFLAGS) apptbook.cpp
+
+dappt.obj: dappt.cpp dappt.xih dappt.xh
+	$(CPPC) $(DLL_CPPFLAGS) dappt.cpp
+
+dmtg.obj: dmtg.cpp dmtg.xih dmtg.xh mtg.xh appt.xh dappt.xh
+	$(CPPC) $(DLL_CPPFLAGS) dmtg.cpp
+
+dccall.obj: dccall.cpp dccall.xih dccall.xh ccall.xh appt.xh dappt.xh
+	$(CPPC) $(DLL_CPPFLAGS) dccall.cpp
+
+pappt.obj: pappt.xih pappt.xh appt.xh pappt.cpp
+	$(CPPC) $(DLL_CPPFLAGS) pappt.cpp
+
+pccall.obj: pccall.cpp pccall.xih pccall.xh dccall.xh ccall.xh appt.xh dappt.xh pappt.xh
+	$(CPPC) $(DLL_CPPFLAGS) pccall.cpp
+
+pmtg.obj: pmtg.cpp pmtg.xih pmtg.xh dmtg.xh mtg.xh appt.xh dappt.xh pappt.xh
+	$(CPPC) $(DLL_CPPFLAGS) pmtg.cpp
+
+dapptbk.obj: dapptbk.cpp appt.xh mtg.xh ccall.xh apptbook.xh key.xh dapptbk.xih dapptbk.xh samptype.h dappt.xh fapptbk.xh
+	$(CPPC) $(DLL_CPPFLAGS) dapptbk.cpp
+
+pdapptbk.obj: pdapptbk.cpp pappt.xh appt.xh pmtg.xh dmtg.xh mtg.xh dappt.xh pccall.xh dccall.xh ccall.xh key.xh dapptbk.xh apptbook.xh pfapptbk.xh fapptbk.xh pdapptbk.xih pdapptbk.xh
+	$(CPPC) $(DLL_CPPFLAGS) pdapptbk.cpp
+
+fapptbk.obj: fapptbk.cpp appt.xh mtg.xh ccall.xh dappt.xh dmtg.xh dccall.xh apptbook.xh key.xh dapptbk.xh fapptbk.xih fapptbk.xh samptype.h
+	$(CPPC) $(DLL_CPPFLAGS) fapptbk.cpp
+
+pfapptbk.obj: pfapptbk.cpp pappt.xh appt.xh pmtg.xh dmtg.xh mtg.xh dappt.xh pccall.xh dccall.xh ccall.xh key.xh pdapptbk.xh dapptbk.xh apptbook.xh pfapptbk.xih pfapptbk.xh fapptbk.xh smapptbk.xh
+	$(CPPC) $(DLL_CPPFLAGS) pfapptbk.cpp
+
+smapptbk.obj: smapptbk.sqc smapptbk.xih smapptbk.xh
+	CREATEDB.CMD
+	SQLPREP SMAPPTBK.SQC CALENDAR /b /p
+	COPY SMAPPTBK.C SMAPPTBK.CPP
+	$(CPPC) $(DLL_CPPFLAGS) smapptbk.cpp
+
+

@@ -1,0 +1,311 @@
+/*
+ *  25H7912  (C)  COPYRIGHT International Business Machines Corp. 1992,1996,1996
+ *  All Rights Reserved
+ *  Licensed Materials - Property of IBM
+ *  US Government Users Restricted Rights - Use, duplication or
+ *  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+ *
+ *
+ *
+ *
+ * DISCLAIMER OF WARRANTIES.
+ * The following [enclosed] code is sample code created by IBM
+ * Corporation. This sample code is not part of any standard or IBM
+ * product and is provided to you solely for the purpose of assisting
+ * you in the development of your applications.  The code is provided
+ * "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+ * NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+ * THIS CODE.  IBM shall not be liable for any damages arising out of
+ * your use of the sample code, even if they have been advised of the
+ * possibility of such damages.
+ *
+ * DISTRIBUTION.
+ * This sample code can be freely distributed, copied, altered, and
+ * incorporated into other software, provided that it bears the above
+ * Copyright notice and DISCLAIMER intact.
+ */
+
+/******************************************************************************
+ *
+ *  Description of Interfaces defined in rentalf.idl (other interfaces for this
+ *  sample can be found in rental.idl and rentalg.idl).
+ *  -----------------------------------------------------------------------------
+ *
+ *  MovieFactory - factory used to create Movie objects. This factory is used in
+ *                 the real_object_creation code to create the actual movie
+ *                 object by calling the make_movie method. The Movie interface
+ *                 defined in rental.idl contains a factory=MovieFactory modifier
+ *                 which associates the MovieFactory as the factory to create
+ *                 objects of type Movie.
+ *
+ *  GameFactory  - factory used to create Game objects. This factory is used in
+ *                 the real_object_creation code to create the actual Game
+ *                 object by calling the make_game method. The Game interface
+ *                 defined in rental.idl contains a factory=GameFactory modifier
+ *                 which associates the GameFactory as the factory to create
+ *                 objects of type Game.
+ *
+ *
+ *  RentalItemLog - A LifeCycle object which keeps track of all of the RentalItem
+ *                  objects created with the GenericRentalFactory (and subsequent
+ *                  calls to make_move and make_game off the MovieFactory and
+ *                  GameFactory objects). The RentalManager keeps a reference to
+ *                  the RentalItemLog (and attribute of the RentalManager interface).
+ *                  Creating the RentalItemLog is an administrative task which
+ *                  can be done in the initial setup for the application/sample.
+ *
+ *  CustomerLog   - A LifeCycle object which keeps track of all CustomerAccount
+ *                  objects.  The RentalManager keeps a reference to the CustomerLog
+ *                  (an attribute of the RentalManager interface). Creating the
+ *                  CustomerLog is an administrative task which can be done in the
+ *                  initial setup for the application/sample.
+ *
+ *  RentalLog     - A LifeCycle object which keeps track of all Rental objects which
+ *                  are objects that contain information about movies and games that
+ *                  are checked in and out.  The RentalManager keeps a reference to
+ *                  the RentalLog (an attribute of the RentalManager interface). Creating
+ *                  the RentalLog is an administrative task which can be done in the
+ *                  initial setup for the application/sample.
+ *
+ *  NOTE: All interfaces in this file inherit from LifeCycleObject which will give us
+ *        the ability to simply remove the objects when needed (remove function is
+ *        a method of the LifeCycleObject and terminates the existence of an object). If
+ *        the object is remote, the remove will delete both the actual object and the
+ *        local proxy to the remote object. The client application is not responsible
+ *        for cleaning up (will be handled by the remove method). All interfaces that
+ *        inherit from LifeCycleObject should specify the base proxy class being equal
+ *        to the LifeCycleObject__Proxy such as:
+ *
+ *        baseproxyclass = "somLifeCycle::LifeCycleObject__Proxy";
+ *
+ ******************************************************************************/
+
+#ifndef SOM_rentalf_idl
+#define SOM_rentalf_idl
+
+#include <somobj.idl>
+#include <somlc.idl>
+#include <snglicls.idl>
+
+interface Movie;
+interface Game;
+interface RentObject;
+interface RentalItem;
+interface CustomerAccount;
+
+
+interface MovieFactory : somLifeCycle::LifeCycleObject
+{
+
+  //# Methods
+
+    Movie make_movie(in string title);
+
+#ifdef __SOMIDL__
+  implementation {
+    passthru C_xh = "#include <Rental.xh>";
+    releaseorder:  make_movie;
+
+    //# Class Modifiers
+    functionprefix = MovieFac_;
+    dllname = "rental.dll";
+    metaclass = SOMMSingleInstance;
+
+    //# Method Modifiers
+    somDefaultInit: override;
+    somDestruct: override;
+
+    baseproxyclass = "somLifeCycle::LifeCycleObject__Proxy";
+
+  };
+#endif /* __SOMIDL__ */
+};
+
+
+interface GameFactory : somLifeCycle::LifeCycleObject
+{
+
+  //# Methods
+
+    Game make_game(in string title);
+
+#ifdef __SOMIDL__
+  implementation {
+    releaseorder:  make_game;
+
+    //# Class Modifiers
+    functionprefix = GameFac_;
+    dllname = "rental.dll";
+    metaclass = SOMMSingleInstance;
+
+    //# Method Modifiers
+
+    somDefaultInit: override;
+    somDestruct: override;
+
+    baseproxyclass = "somLifeCycle::LifeCycleObject__Proxy";
+
+  };
+#endif /* __SOMIDL__ */
+};
+
+
+
+interface RentalItemLog : somLifeCycle::LifeCycleObject
+{
+  struct LogEntry {
+               RentalItem  Rental;
+               LogEntry *prevRental;
+               LogEntry *nextRental;
+               LogEntry *prevMovie;
+               LogEntry *nextMovie;
+               LogEntry *prevGame;
+               LogEntry *nextGame;
+  };
+
+  //# Methods
+  void add_Rental_Item(in RentalItem RentalEntry);
+
+  void remove_Rental_Item(in long RentalItem_ID);
+
+  string display_movies();
+
+  string display_games();
+
+  string display_log();
+
+  RentalItem find_RentalItem(in long RentalID_to_find);
+
+#ifdef __SOMIDL__
+  implementation {
+    releaseorder:  add_Rental_Item,
+                   remove_Rental_Item,
+                   display_movies,
+                   display_games,
+                   display_log,
+                   find_RentalItem;
+
+    //# Class Modifiers
+    functionprefix = RentalItemLg_;
+    dllname = "rental.dll";
+    metaclass = SOMMSingleInstance;
+
+    //# Instance Variables
+    LogEntry *firstRental;
+    LogEntry *lastRental;
+    LogEntry *firstMovie;
+    LogEntry *lastMovie;
+    LogEntry *firstGame;
+    LogEntry *lastGame;
+    long RentalCount;
+    long MovieCount;
+    long GameCount;
+
+    //# Method Modifiers
+    somDefaultInit: override;
+    somDestruct: override;
+
+    baseproxyclass = "somLifeCycle::LifeCycleObject__Proxy";
+
+  };
+#endif /* __SOMIDL__ */
+};
+
+
+interface CustomerLog  : somLifeCycle::LifeCycleObject
+{
+
+  struct CustEntry {
+               CustomerAccount Customer;
+               CustEntry *prev;
+               CustEntry *next;
+  };
+
+  //# Methods
+
+  void add_customer(in CustomerAccount Customer_to_Add);
+
+  void remove_customer(in long CustomerID_to_Remove);
+
+  CustomerAccount find_customer(in long Custid_to_find);
+
+  string display_customer_list();
+
+#ifdef __SOMIDL__
+  implementation {
+    releaseorder:  add_customer,
+                   remove_customer,
+                   find_customer,
+                   display_customer_list;
+
+    //# Class Modifiers
+    functionprefix = CustomerLg_;
+    dllname = "rental.dll";
+
+    //# Instance Variables
+    CustEntry *firstCustomer;
+    CustEntry *lastCustomer;
+    long customerCount;
+
+    //# Method Modifiers
+    somDefaultInit: override;
+    somDestruct: override;
+
+    baseproxyclass = "somLifeCycle::LifeCycleObject__Proxy";
+
+  };
+#endif /* __SOMIDL__ */
+};
+
+
+interface RentalLog : somLifeCycle::LifeCycleObject
+{
+
+  struct RentalEntry {
+               RentObject RentalObject;
+               RentalEntry *prev;
+               RentalEntry *next;
+  };
+
+  //# Methods
+
+  void add_rental(in RentObject Rental_to_Add);
+
+  void remove_rental(in long rentalID_to_Remove);
+
+  string display_rental_list();
+
+  RentObject find_rental(in long rental_to_find);
+
+
+#ifdef __SOMIDL__
+  implementation {
+    releaseorder:  add_rental,
+                   remove_rental,
+                   display_rental_list,
+                   find_rental;
+
+    //# Class Modifiers
+    functionprefix = RentalLg_;
+    dllname = "rental.dll";
+
+    //# Instance Variables
+    RentalEntry *firstRental;
+    RentalEntry *lastRental;
+    long rentalCount;
+
+    //# Method Modifiers
+    somDefaultInit: override;
+    somDestruct: override;
+
+    baseproxyclass = "somLifeCycle::LifeCycleObject__Proxy";
+
+  };
+#endif /* __SOMIDL__ */
+};
+
+
+#endif  /* SOM_rentalf_idl */
+
+

@@ -1,0 +1,389 @@
+//# Description: Base non-container class
+//#
+//# Author:      Joseph H McIntyre
+//#
+//# (C) COPYRIGHT International Business Machines Corp. 1995, 1996
+//# All Rights Reserved
+//# Licensed Materials - Property of IBM
+//#
+//# US Government Users Restricted Rights - Use, duplication or
+//# disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+//#
+//# DISCLAIMER OF WARRANTIES.  The following [enclosed] code is
+//# sample code created by IBM Corporation. This sample code is not
+//# part of any standard or IBM product and is provided to you solely
+//# for the purpose of assisting you in the development of your
+//# applications.  The code is provided "AS IS", without
+//# warranty of any kind.  IBM shall not be liable for any damages
+//# arising out of your use of the sample code, even if they have been
+//# advised of the possibility of such damages.
+
+
+#ifndef _BASENC_
+#define _BASENC_
+
+#include "Part.idl"
+
+interface ODSession;
+interface ODWindow;
+interface ODFocusSet;
+interface ODMenuBar;
+interface ODPopup;
+
+interface jmBaseList;
+interface jmBaseImage;
+interface M_jmBaseNonContainer;
+
+
+interface jmBaseNonContainer : ODPart
+ {
+    attribute jmBaseList      frames;
+    attribute jmBaseList      facets;
+    attribute jmBaseList      linkSources;
+    attribute jmBaseList      linkTargets;
+
+    attribute ODSession       session;
+    attribute ODFocusSet      focusSet;
+    attribute ODTypeToken     focusSelection;
+    attribute ODTypeToken     focusMenu;
+    attribute ODTypeToken     focusKey;
+    attribute ODTypeToken     focusMouse;
+    attribute ODTypeToken     focusModal;
+    attribute ODTypeToken     focusClipboard;
+    attribute ODTypeToken     focusStatusLine;
+
+    attribute ODTypeToken     viewFrame;
+    attribute ODTypeToken     viewSmallIcon;
+    attribute ODTypeToken     viewLargeIcon;
+    attribute ODTypeToken     viewThumbnail;
+
+    attribute ODPart          partWrapper;
+    attribute ODID            idWindow;
+    attribute ODMenuBar       menuBar;
+    attribute ODPopup         menuPopup;
+
+    attribute ODBoolean       readOnly;
+
+    // base part framework
+    string       PartKind ();
+
+    void         InitializePart ();
+
+    void         InternalizeState (in ODStorageUnit storageUnit);
+    void         InternalizeContent (in ODStorageUnit storageUnit);
+    void         InternalizeLinkSources (in ODStorageUnit storageUnit);
+    void         InternalizeLinkTargets (in ODStorageUnit storageUnit);
+
+    void         ClearContentsProperty (in ODStorageUnit storageUnit);
+
+    void         ExternalizeHeader (in ODStorageUnit storageUnit);
+    void         ExternalizeState (in ODStorageUnit storageUnit, in ODDraftKey key, in ODFrame scopeFrame);
+    void         ExternalizeContent (in ODStorageUnit storageUnit);
+    void         ExternalizeLinkSources (in ODStorageUnit storageUnit);
+    void         ExternalizeLinkTargets (in ODStorageUnit storageUnit);
+
+    void         SetContentChanged ();
+    ODBoolean    GetContentChanged ();
+
+    ODBoolean    IsFromStorage ();
+
+    ODBoolean    ActivateFrame (in ODFrame frame);
+    void         DeActivateFrame (in ODFrame frame);
+
+    ODWindow     MakeWindow (in ODFrame sourceFrame);
+    void         WindowActivate (in ODFrame frame, in ODBoolean activating);
+    void         InvalidateAllFacets ();
+
+    // drawing
+    void         DrawSmallIconView (in ODFacet facet, in ODShape shape);
+    void         DrawLargeIconView (in ODFacet facet, in ODShape shape);
+    void         DrawThumbnailView (in ODFacet facet, in ODShape shape);
+    void         DrawFrameView (in ODFacet facet, in ODShape shape);
+    jmBaseImage  AcquireSmallIcon (in unsigned long id);
+    jmBaseImage  AcquireLargeIcon (in unsigned long id);
+
+    // menu active/inactive
+    ODBoolean    MenuCutValid ();
+    ODBoolean    MenuCopyValid ();
+    ODBoolean    MenuPasteValid (in ODStorageUnit su);
+    ODBoolean    MenuPasteAsValid (in ODStorageUnit su);
+    ODBoolean    MenuPasteLinkValid (in ODStorageUnit su);
+    ODBoolean    MenuDeleteValid ();
+    #if defined (_PLATFORM_OS2_)
+      ODBoolean    MenuBreakLinkValid ();
+    #endif
+
+    // edit menu implementation
+    ODBoolean    MenuCut (in ODFrame frame);
+    ODBoolean    MenuCopy (in ODFrame frame);
+    ODBoolean    MenuPaste (in ODFrame frame, in ODStorageUnit su);
+    ODBoolean    MenuPasteAs (in ODFrame frame, in ODStorageUnit su);
+    ODBoolean    MenuPasteLink (in ODFrame frame, in ODStorageUnit su);
+    ODBoolean    MenuDelete (in ODFrame frame);
+    #if defined (_PLATFORM_OS2_)
+      ODBoolean    MenuBreakLink (in ODFrame frame);
+    #endif
+
+    ODBoolean    MenuSelectionShowAsValid (in ODFrame frame);
+    ODBoolean    MenuSelectionShowAsSmallIconValid (in ODFrame frame);
+    ODBoolean    MenuSelectionShowAsLargeIconValid (in ODFrame frame);
+    ODBoolean    MenuSelectionShowAsThumbnailValid (in ODFrame frame);
+    ODBoolean    MenuSelectionShowAsFrameValid (in ODFrame frame);
+
+    ODBoolean    MenuShowAsValid (in ODFrame frame);
+    ODBoolean    MenuShowAsSmallIconValid (in ODFrame frame);
+    ODBoolean    MenuShowAsLargeIconValid (in ODFrame frame);
+    ODBoolean    MenuShowAsThumbnailValid (in ODFrame frame);
+    ODBoolean    MenuShowAsFrameValid (in ODFrame frame);
+
+    void         PopulateClipboardStorageUnit (in ODStorageUnit su);
+    void         ReceiveClipboardStorageUnit (in ODStorageUnit su);
+
+    // drag and drop support
+    ODBoolean    DragValid ();
+    ODBoolean    DropValid (in ODDragItemIterator dragInfo);
+    ODBoolean    Drag (in ODFrame frame, in ODEventData event);
+    jmBaseImage  AcquireDragImage (in unsigned long id);
+    void         PopulateDragStorageUnit (in ODStorageUnit su);
+    ODDropResult ReceiveDropStorageUnit (in ODStorageUnit su, in ODFacet facet, in ODPoint where);
+
+    // link source support
+    ODBoolean    LinkSourceValid ();
+    ODByteArray *PopulateLinkSpec ();
+    void         PopulateLinkStorageUnit (in ODStorageUnit su);
+    void         UpdateLink ();
+
+    // link target support
+    void         ReceiveLinkStorageUnit (in ODStorageUnit su);
+
+    #ifdef __SOMIDL__
+    implementation
+     {
+        metaclass      = M_jmBaseNonContainer;
+        majorversion   = 1;
+        minorversion   = 0;
+        dllname        = "jmbase.dll";
+
+        releaseorder:
+            _get_frames,
+            _set_frames,
+            _get_facets,
+            _set_facets,
+            _get_linkSources,
+            _set_linkSources,
+            _get_linkTargets,
+            _set_linkTargets,
+            _get_session,
+            _set_session,
+            _get_focusSelection,
+            _set_focusSelection,
+            _get_focusMenu,
+            _set_focusMenu,
+            _get_focusKey,
+            _set_focusKey,
+            _get_focusMouse,
+            _set_focusMouse,
+            _get_focusModal,
+            _set_focusModal,
+            _get_focusClipboard,
+            _set_focusClipboard,
+            _get_focusStatusLine,
+            _set_focusStatusLine,
+            _get_focusSet,
+            _set_focusSet,
+            _get_viewFrame,
+            _set_viewFrame,
+            _get_viewSmallIcon,
+            _set_viewSmallIcon,
+            _get_viewLargeIcon,
+            _set_viewLargeIcon,
+            _get_viewThumbnail,
+            _set_viewThumbnail,
+            _get_partWrapper,
+            _set_partWrapper,
+            _get_idWindow,
+            _set_idWindow,
+            _get_menuBar,
+            _set_menuBar,
+            _get_menuPopup,
+            _set_menuPopup,
+            _get_readOnly,
+            _set_readOnly,
+            ActivateFrame,
+            DeActivateFrame,
+            WindowActivate,
+            MakeWindow,
+            DrawSmallIconView,
+            DrawLargeIconView,
+            DrawThumbnailView,
+            DrawFrameView,
+            AcquireSmallIcon,
+            AcquireLargeIcon,
+            MenuCutValid,
+            MenuCopyValid,
+            MenuPasteValid,
+            MenuPasteAsValid,
+            MenuPasteLinkValid,
+            MenuDeleteValid,
+
+            #if defined (_PLATFORM_OS2_)
+              MenuBreakLinkValid,
+            #endif
+
+            MenuCut,
+            MenuCopy,
+            MenuPaste,
+            MenuPasteAs,
+            MenuPasteLink,
+            MenuDelete,
+
+            #if defined (_PLATFORM_OS2_)
+            MenuBreakLink,
+            #endif
+
+            PopulateClipboardStorageUnit,
+            ReceiveClipboardStorageUnit,
+            DragValid,
+            DropValid,
+            Drag,
+            AcquireDragImage,
+            PopulateDragStorageUnit,
+            ReceiveDropStorageUnit,
+            LinkSourceValid,
+            PopulateLinkSpec,
+            PopulateLinkStorageUnit,
+            ReceiveLinkStorageUnit,
+            UpdateLink,
+            InvalidateAllFacets,
+            PartKind,
+            GetContentChanged,
+            SetContentChanged,
+            InternalizeState,
+            InternalizeContent,
+            InternalizeLinkSources,
+            InternalizeLinkTargets,
+            ClearContentsProperty,
+            ExternalizeHeader,
+            ExternalizeState,
+            ExternalizeContent,
+            ExternalizeLinkSources,
+            ExternalizeLinkTargets,
+            IsFromStorage,
+            InitializePart,
+            MenuSelectionShowAsValid,
+            MenuSelectionShowAsSmallIconValid,
+            MenuSelectionShowAsLargeIconValid,
+            MenuSelectionShowAsThumbnailValid,
+            MenuSelectionShowAsFrameValid,
+            MenuShowAsValid,
+            MenuShowAsSmallIconValid,
+            MenuShowAsLargeIconValid,
+            MenuShowAsThumbnailValid,
+            MenuShowAsFrameValid;
+
+        override:
+            somDefaultInit,
+            somDestruct,
+            FulfillPromise,
+            DropCompleted,
+            DragEnter,
+            DragWithin,
+            DragLeave,
+            Drop,
+            ContainingPartPropertiesUpdated,
+            AcquireContainingPartProperties,
+            RevealFrame,
+            EmbeddedFrameSpec,
+            CreateEmbeddedFramesIterator,
+            DisplayFrameAdded,
+            AttachSourceFrame,
+            DisplayFrameConnected,
+            DisplayFrameRemoved,
+            DisplayFrameClosed,
+            FrameShapeChanged,
+            ViewTypeChanged,
+            PresentationChanged,
+            SequenceChanged,
+            WritePartInfo,
+            ReadPartInfo,
+            Open,
+            RequestEmbeddedFrame,
+            RemoveEmbeddedFrame,
+            RequestFrameShape,
+            UsedShapeChanged,
+            AdjustBorderShape,
+            FacetAdded,
+            FacetRemoved,
+            CanvasChanged,
+            GeometryChanged,
+            Draw,
+            CanvasUpdated,
+            HighlightChanged,
+            CreateLink,
+            LinkUpdated,
+            RevealLink,
+            EmbeddedFrameUpdated,
+            LinkStatusChanged,
+            BeginRelinquishFocus,
+            CommitRelinquishFocus,
+            AbortRelinquishFocus,
+            FocusAcquired,
+            FocusLost,
+            CloneInto,
+            ExternalizeKinds,
+            Externalize,
+            ChangeKind,
+            HandleEvent,
+            AdjustMenus,
+            UndoAction,
+            RedoAction,
+            DisposeActionState,
+            WriteActionState,
+            ReadActionState,
+            InitPart,
+            InitPartFromStorage,
+            Release,
+            ReleaseAll,
+            GetPrintResolution,
+
+            #if defined (_PLATFORM_OS2_)
+              BreakLink,
+              BreakLinkSource,
+              LinkBroken,
+              UpdateFromLinkSource,
+              ShowLink,
+            #endif
+
+            AcquireExtension,
+            ReleaseExtension,
+            HasExtension;
+
+        // method overrides
+        somDefaultInit: init;
+
+        // private variables
+        string    strKind;
+        ODBoolean fDragHighlight;
+        ODBoolean contentChanged;
+        ODBoolean fromStorage;
+     };
+    #endif
+ };
+
+
+interface M_jmBaseNonContainer : M_ODPart
+ {
+    #ifdef __SOMIDL__
+    implementation
+     {
+        override:
+            clsGetODPartHandlerName,
+            clsGetODPartHandlerDisplayName,
+            clsGetODPartKinds,
+            clsGetOLE2ClassId,
+            clsGetWindowsIconFileName;
+     };
+    #endif
+ };
+#endif
+

@@ -1,0 +1,345 @@
+// 3/8/96 15:59:24
+/*
+#
+#
+#    25H7912  (C)  COPYRIGHT International Business Machines Corp. 1996
+#   All Rights Reserved
+#   Licensed Materials - Property of IBM
+#   US Government Users Restricted Rights - Use, duplication or
+#   disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+*/
+/*
+ *
+ *
+ * DISCLAIMER OF WARRANTIES.
+ * The following [enclosed] code is sample code created by IBM
+ * Corporation. This sample code is not part of any standard or IBM
+ * product and is provided to you solely for the purpose of assisting
+ * you in the development of your applications.  The code is provided
+ * "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+ * NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+ * THIS CODE.  IBM shall not be liable for any damages arising out of
+ * your use of the sample code, even if they have been advised of the
+ * possibility of such damages.
+ *
+ * DISTRIBUTION.
+ * This sample code can be freely distributed, copied, altered, and
+ * incorporated into other software, provided that it bears the above
+ * Copyright notice and DISCLAIMER intact.
+ */
+
+#define SOM_Module_smapptbk_Source
+
+#include "smapptbk.xih"                          // schema mapper include file
+#include <sqlenv.h>                              // sql environment include
+#include <sqlcodes.h>                            // sql completion codes
+#include <assert.h>                              // assert routine include
+
+
+//  NOTE: the following defines must be kept in sync with their associated host variables.
+//        sql does not recognize these constants so the values must be hard coded in the
+//        host variable section below, but the constants are used in the c++ code.
+
+#define APPTMT_LEN 13                            // length of appointmentName host variable
+#define LOC_PHONE_LEN 100                        // length of location_phone host variable
+#define SUBJ_LEN 1000                            // length of subject host variable
+#define BOOKID_LEN 25                            // length of bookId host variable
+
+EXEC SQL INCLUDE SQLCA;
+EXEC SQL BEGIN DECLARE SECTION;
+char bookId[25];                                 // Used by smapptbk and contains the book id
+static SQL TYPE is BLOB(25k) objstrm;            // Used by smapptbk to contain the StreamIO
+long maximumLength;                              // Used by smapptbk contains the maximum stream length
+short year;                                      // Used by smappt contains the appointment year
+short month;                                     // Used by smappt contains the appointment month
+short day;                                       // Used by smappt contains the appointment day
+long start;                                      // Used by smappt contains the appointment start time
+long end;                                        // Used by smappt contains the appointment end time
+char subject[1000];                              // Used by smappt contains the appointment subject
+long apptId;                                     // Used by smappt contains the appointment id
+char location_phone[100];                        // Used by smappt contains the appointment location or phone number
+char appointmentName[13];                        // Used by smappt contains the appointment name
+long numberOfUsers;                              // Used by smappt contains the number of users of the appointment
+EXEC SQL END DECLARE SECTION;
+
+
+void read_my_string(Environment*, somStream_StreamIO*, char*, int);
+
+/**********************************************************************
+* function: read_my_string
+*
+* purpose: is to read a string from a somStream_StreamIO, verify that
+*          the length of the stream is less than length, and if so,
+*          copy the string into the character array passed in arr1.
+**********************************************************************/
+void read_my_string(Environment *ev, somStream_StreamIO* objstr, char* arr1, int length) {
+    char *strptr;
+    strptr = objstr->read_string(ev);
+    //  the following asserts test that the read_string was successful and that
+    //  the string that was returned will fit into the character array.  Normally
+    //  if these failed, you would set a user exception in the ev and return.  Being that
+    //  this sample is focusing on using the services and not on error handling, the
+    //  asserts are being used.  NOTE:  if an assert fails, this is an immediate program
+    //  exit.
+
+    assert(strptr);                  // NULL would indicate no string was returned
+    assert(ev->_major==0);           // ev->_major != 0 would indicate that the read_string failed
+    assert(strlen(strptr)<length);   // check to see if the string will fit into the character array
+    strcpy(arr1,strptr);             // copy the string into the host variable (character array) for SQL
+    SOMFree(strptr);                 // free up the storage allocated by the read_string method
+}
+
+
+
+SOM_Scope somPersistenceDB2_SOMPsqlca*  SOMLINK BookMapper_smapptbkstore(BookMapper_smapptbk *somSelf,
+                                                                          Environment *ev,
+                                                                         somStream_StreamIO* objstr,
+                                                                         somPersistenceDB2_PID_DB2* pid)
+{
+    /* BookMapper_smapptbkData *somThis = BookMapper_smapptbkGetData(somSelf); */
+    BookMapper_smapptbkMethodDebug("BookMapper_smapptbk","BookMapper_smapptbkstore");
+
+    seq_octet theStream;                                      // declare a seq_octet to recieve the
+                                                              // stream
+    read_my_string(ev,pid,bookId,25);                         // read the bookid that is in the stream,
+                                                              // that is part of the pid.
+    theStream = objstr->get_buffer(ev);                       // get the stream
+
+    //
+    // The following code sets the sql host variables in preparation to store in the database.
+    //
+    maximumLength = (long)theStream._maximum;
+    objstrm.length = theStream._length;
+    memcpy (objstrm.data,theStream._buffer,objstrm.length);
+    SOMFree(theStream._buffer);                               // Free the buffer returned from get_buffer
+
+    //
+    // Attempt to UPDATE the database first in case the record already exists.
+    //
+    EXEC SQL UPDATE BOOKS
+    SET BOOK = :objstrm, MAXIMUM = :maximumLength
+    WHERE BOOKID = :bookId;
+
+    //
+    // Check to see if the record was updated.  If the SQL return code is 100, the
+    // record was not found in the database, so then the record needs to be INSERTed
+    // into the database.
+    //
+    if (sqlca.sqlcode == SQL_RC_W100)         /* ROW NOT FOUND */
+          EXEC SQL INSERT INTO BOOKS
+               VALUES (:bookId, :maximumLength, :objstrm );
+
+    //
+    // Return the sqlca structure that contains the return code from SQL.
+    //
+    return ((SOMPsqlca*) &sqlca);
+
+
+}
+
+SOM_Scope somPersistenceDB2_SOMPsqlca*  SOMLINK BookMapper_smapptbkrestore(BookMapper_smapptbk *somSelf,
+                                                                            Environment *ev,
+                                                                           somStream_StreamIO* objstr,
+                                                                           somPersistenceDB2_PID_DB2* pid)
+{
+    /* BookMapper_smapptbkData *somThis = BookMapper_smapptbkGetData(somSelf); */
+    BookMapper_smapptbkMethodDebug("BookMapper_smapptbk","BookMapper_smapptbkrestore");
+
+    seq_octet theStream;                                      // declare a seq_octet to build the
+                                                              // stream
+    read_my_string(ev,pid,bookId,BOOKID_LEN);                         // read the bookid that is in the stream,
+                                                              // that is part of the pid.
+
+    //
+    // Attempt to SELECT the record from the database.
+    //
+    EXEC SQL SELECT BOOK, MAXIMUM INTO :objstrm, :maximumLength
+        FROM  BOOKS
+        WHERE BOOKID = :bookId;
+
+    //
+    // If the record was successfully retrieved (SELECTed) from the database, then the
+    // seq_octet structure needs to be built and then a set_buffer is done to rebuild
+    // the streamIO.  The streamIO is then returned in the objstr parameter.
+    //
+    if (sqlca.sqlcode == SQL_RC_OK) {
+       theStream._maximum = maximumLength;
+       theStream._length = objstrm.length;
+       theStream._buffer = (octet*)objstrm.data;
+       objstr->set_buffer(ev,&theStream);
+       }
+
+    //
+    // Return the sqlca structure that contains the return code from SQL.
+    //
+    return ((SOMPsqlca*) &sqlca);
+
+}
+
+SOM_Scope somPersistenceDB2_SOMPsqlca*  SOMLINK BookMapper_smapptbkDelete(BookMapper_smapptbk *somSelf,
+                                                                           Environment *ev,
+                                                                          somPersistenceDB2_PID_DB2* pid)
+{
+    /* BookMapper_smapptbkData *somThis = BookMapper_smapptbkGetData(somSelf); */
+    BookMapper_smapptbkMethodDebug("BookMapper_smapptbk","BookMapper_smapptbkDelete");
+
+    read_my_string(ev,pid,bookId,BOOKID_LEN);                 // read the bookid that is in the stream,
+                                                              // that is part of the pid.
+
+    //
+    // DELETE the record from the database
+    //
+    EXEC SQL DELETE FROM BOOKS
+        WHERE BOOKID = :bookId;
+
+    //
+    // Return the sqlca structure that contains the return code from SQL.
+    //
+    return ((SOMPsqlca*) &sqlca);
+
+}
+
+/*
+ *  This file was generated by the SOM Compiler and Emitter Framework.
+ *  Generated using template emitter:
+ *      SOM Emitter emitxtm: 2.47
+ */
+
+#define SOM_Module_smapptbk_Source
+
+#include "smapptbk.xih"
+
+
+SOM_Scope somPersistenceDB2_SOMPsqlca*  SOMLINK AppointmentMapper_smapptstore(AppointmentMapper_smappt *somSelf,
+                                                                               Environment *ev,
+                                                                              somStream_StreamIO* objstr,
+                                                                              somPersistenceDB2_PID_DB2* pid)
+{
+    /* AppointmentMapper_smapptData *somThis = AppointmentMapper_smapptGetData(somSelf); */
+    AppointmentMapper_smapptMethodDebug("AppointmentMapper_smappt","AppointmentMapper_smapptstore");
+
+    read_my_string(ev,pid,appointmentName,SUBJ_LEN);          // read the appointment name that is in the stream,
+                                                              // that is part of the pid.
+
+    //
+    // The following code sets the sql host variables in preparation to store in the database.
+    //
+    year = objstr->read_short(ev);
+    month = objstr->read_short(ev);
+    day = objstr->read_short(ev);
+    start = (long)objstr->read_unsigned_long(ev);
+    end = (long)objstr->read_unsigned_long(ev);
+    read_my_string(ev,objstr,subject,SUBJ_LEN);
+    apptId = objstr->read_long(ev);
+    read_my_string(ev,objstr,location_phone,LOC_PHONE_LEN);
+    read_my_string(ev,objstr,appointmentName,APPTMT_LEN);
+    numberOfUsers = objstr->read_long(ev);
+
+    //
+    // Attempt to UPDATE the database first in case the record already exists.
+    //
+    EXEC SQL UPDATE APPOINTMENTS
+    SET YEAR = :year,
+        MONTH = :month,
+        DAY = :day,
+        START = :start,
+        END = :end,
+        SUBJECT = :subject,
+        APPTID = :apptId,
+        LOCATION_PHONE = :location_phone,
+        NUMBEROFUSERS = :numberOfUsers
+    WHERE APPOINTMENTNAME = :appointmentName;
+
+    //
+    // Check to see if the record was updated.  If the SQL return code is 100, the
+    // record was not found in the database, so then the record needs to be INSERTed
+    // into the database.
+    //
+    if (sqlca.sqlcode == SQL_RC_W100)         /* ROW NOT FOUND */
+          EXEC SQL INSERT INTO APPOINTMENTS
+               VALUES (:appointmentName,
+                       :year,
+                       :month,
+                       :day,
+                       :start,
+                       :end,
+                       :subject,
+                       :apptId,
+                       :location_phone,
+                       :numberOfUsers );
+
+    //
+    // Return the sqlca structure that contains the return code from SQL.
+    //
+    return ((SOMPsqlca*) &sqlca);
+
+
+}
+
+SOM_Scope somPersistenceDB2_SOMPsqlca*  SOMLINK AppointmentMapper_smapptrestore(AppointmentMapper_smappt *somSelf,
+                                                                                 Environment *ev,
+                                                                                somStream_StreamIO* objstr,
+                                                                                somPersistenceDB2_PID_DB2* pid)
+{
+    /* AppointmentMapper_smapptData *somThis = AppointmentMapper_smapptGetData(somSelf); */
+    AppointmentMapper_smapptMethodDebug("AppointmentMapper_smappt","AppointmentMapper_smapptrestore");
+
+    read_my_string(ev,pid,appointmentName,13);                // read the appointment name that is in the stream,
+                                                              // that is part of the pid.
+
+    EXEC SQL SELECT YEAR, MONTH, DAY, START, END, SUBJECT, APPTID, LOCATION_PHONE, NUMBEROFUSERS
+        INTO :year, :month, :day, :start, :end, :subject, :apptId, :location_phone, :numberOfUsers
+        FROM  APPOINTMENTS
+        WHERE APPOINTMENTNAME = :appointmentName;
+
+    //
+    // If the SELECT was successful, rebuild the streamIO in the same order as the
+    // overrides for externalize_to_stream methods do.  The order is critical since the
+    // internalize_from_stream expects this order and will either fail or build an object that
+    // has information that is not correct.
+    //
+    if (sqlca.sqlcode == 0) {
+       objstr->write_short(ev,year);
+       objstr->write_short(ev,month);
+       objstr->write_short(ev,day);
+       objstr->write_unsigned_long(ev,(unsigned long)start);
+       objstr->write_unsigned_long(ev,(unsigned long)end);
+       objstr->write_string(ev,subject);
+       objstr->write_long(ev,apptId);
+       objstr->write_string(ev,location_phone);
+       objstr->write_string(ev,appointmentName);
+       objstr->write_long(ev,numberOfUsers);
+       }
+
+    //
+    // Return the sqlca structure that contains the return code from SQL.
+    //
+    return ((SOMPsqlca*) &sqlca);
+
+}
+
+SOM_Scope somPersistenceDB2_SOMPsqlca*  SOMLINK AppointmentMapper_smapptDelete(AppointmentMapper_smappt *somSelf,
+                                                                                Environment *ev,
+                                                                               somPersistenceDB2_PID_DB2* pid)
+{
+    /* AppointmentMapper_smapptData *somThis = AppointmentMapper_smapptGetData(somSelf); */
+    AppointmentMapper_smapptMethodDebug("AppointmentMapper_smappt","AppointmentMapper_smapptDelete");
+
+    read_my_string(ev,pid,appointmentName,13);                // read the appointment name that is in the stream,
+                                                              // that is part of the pid.
+
+    //
+    // DELETE the record from the database
+    //
+    EXEC SQL DELETE FROM APPOINTMENTS
+        WHERE APPOINTMENTNAME = :appointmentName;
+
+    //
+    // Return the sqlca structure that contains the return code from SQL.
+    //
+    return ((SOMPsqlca*) &sqlca);
+
+}
+
+

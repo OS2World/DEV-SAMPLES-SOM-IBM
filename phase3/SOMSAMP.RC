@@ -1,0 +1,122 @@
+// 3/8/96 15:32:25
+/*
+#
+#
+#    25H7912  (C)  COPYRIGHT International Business Machines Corp. 1996
+#   All Rights Reserved
+#   Licensed Materials - Property of IBM
+#   US Government Users Restricted Rights - Use, duplication or
+#   disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+*/
+/*
+ *
+ *
+ * DISCLAIMER OF WARRANTIES.
+ * The following [enclosed] code is sample code created by IBM
+ * Corporation. This sample code is not part of any standard or IBM
+ * product and is provided to you solely for the purpose of assisting
+ * you in the development of your applications.  The code is provided
+ * "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+ * NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+ * THIS CODE.  IBM shall not be liable for any damages arising out of
+ * your use of the sample code, even if they have been advised of the
+ * possibility of such damages.
+ *
+ * DISTRIBUTION.
+ * This sample code can be freely distributed, copied, altered, and
+ * incorporated into other software, provided that it bears the above
+ * Copyright notice and DISCLAIMER intact.
+ */
+
+#ifdef __OS2__
+#include <os2.h>                                //Include os2.h
+#endif
+#include "somsamp.h"                            //Symbolic Definitions
+
+//**************************************************************************
+// icon and bitmap resources                                               *
+//  Symbolic Name (ID) <-> icon filename                                   *
+//**************************************************************************
+ICON WND_APPTBK som.ico                      //Title Bar Icon (use same id)
+
+//**************************************************************************
+// string resources - used by IStaticText & ITitle Classes                 *
+//  Symbolic Name (ID) <-> Text String                                     *
+//**************************************************************************
+STRINGTABLE
+  BEGIN
+    WND_APPTBK, "SOM Toolkit Sample Version 1"  //Title Bar String (main id)
+#ifdef __OS2__
+    STR_INFO,   "Use Alt-F4 to Close Window"    //Information Area String
+#else
+    STR_INFO,   "Use Alt-F10 to Close Window"   //Information Area String
+#endif
+    STR_INFODLG,"Enter Meeting Information"     //Information Area String
+    MI_VIEWP,   "View Previous Month"           //InfoArea - View previous Month
+    MI_VIEWN,   "View Next Month"               //InfoArea - View next Month
+    WND_NEWAPPTDIALOG, "New Appointment Book"
+    WND_OPENAPPTDIALOG, "Open Appointment Book"
+    STR_NAME, "Name:"
+    STR_PHONE, "Phone:"
+    STR_LOCATION, "Location:"
+    STR_SUBJECT, "Subject:"
+    STR_USERS, "Users:"
+    STR_START, "Start time:"
+    STR_STOP  , "Stop time:"
+    STR_APPOINTMENT, "Appointment"
+    WND_UPDAPPTDIALOG, "Update Appointment"
+    WND_DELAPPTDIALOG, "Delete Appointment"
+    STR_OK, "Ok"
+    STR_CANCEL, "Cancel"
+    STR_SELECT, "Select"
+    STR_NAMEMESSAGE1, "The calendar name must be one word."
+    STR_NAMEMESSAGE2, "The calendar name must be alpha-numeric characters."
+    STR_ERRORMESSAGE1,"A duplicate appointment date and time already exists."
+    STR_INFOMESSAGE1,"The appointment book has been updated."
+    STR_MSGBOX_TITLE,     "SOM Sample Message Box"
+  END
+
+//*************************************************************
+//  APPTBK Menu Template
+//*************************************************************
+MENU WND_APPTBK
+{
+  SUBMENU  "~File", MI_APPTBK_FILE, MIS_TEXT
+  {
+    MENUITEM "~New...\tAlt+N", MI_APPTBK_FILE_NEW, MIS_TEXT
+    MENUITEM "~Open...\tAlt+O", MI_APPTBK_FILE_OPEN, MIS_TEXT
+    MENUITEM "~Delete\tAlt+D", MI_APPTBK_FILE_DELETE, MIS_TEXT, MIA_DISABLED
+    MENUITEM SEPARATOR
+    MENUITEM "~Exit\tAlt+F4", MI_APPTBK_FILE_EXIT, MIS_TEXT
+  }
+  SUBMENU  "~Appointment", MI_APPTBK_APPOINTMENT, MIS_TEXT
+  {
+    SUBMENU  "~New", MI_APPTBK_APPOINTMENT_NEW, MIS_TEXT, MIA_DISABLED
+    {
+      MENUITEM "~Meeting...", MI_APPTBK_APPOINTMENT_NEW_MEETING, MIS_TEXT
+      MENUITEM "~Conference call...", MI_APPTBK_APPOINTMENT_NEW_CONFERENCE_CALL, MIS_TEXT
+    }
+    MENUITEM "~Update...", MI_APPTBK_APPOINTMENT_UPDATE, MIS_TEXT, MIA_DISABLED
+    MENUITEM "~Delete...", MI_APPTBK_APPOINTMENT_DELETE, MIS_TEXT, MIA_DISABLED
+  }
+  SUBMENU  "~Settings", MI_APPTBK_SETTINGS, MIS_TEXT
+  {
+    MENUITEM "Appointment book ~settings...", MI_APPTBK_SETTINGS_APPOINTMENT_BOOK_SETTINGS, MIS_TEXT, MIA_DISABLED
+  }
+}
+
+//*************************************************************
+//  APPTBK Accelerator table
+//*************************************************************
+ACCELTABLE WND_APPTBK
+BEGIN
+   "N", MI_APPTBK_FILE_NEW, ALT
+   "n", MI_APPTBK_FILE_NEW, ALT
+   "O", MI_APPTBK_FILE_OPEN, ALT
+   "o", MI_APPTBK_FILE_OPEN, ALT
+   "D", MI_APPTBK_FILE_DELETE, ALT
+   "d", MI_APPTBK_FILE_DELETE, ALT
+   VK_F4, MI_APPTBK_FILE_EXIT, VIRTUALKEY, ALT
+END
+

@@ -1,0 +1,161 @@
+#
+# COMPONENT_NAME: somtr::SAMPLES
+#
+# ORIGINS: 27
+#
+# Licensed Materials - Property of IBM                                     
+#                                                                          
+# 25H7-912, 5697-197 (EMEA), 17H5-843 (JAPAN)                              
+#                                                                          
+# (c) Copyright IBM Corp. 1995                                             
+#
+# DISCLAIMER OF WARRANTIES.
+# The following [enclosed] code is sample code created by IBM
+# Corporation. This sample code is not part of any standard or IBM
+# product and is provided to you solely for the purpose of assisting
+# you in the development of your applications.  The code is provided
+# "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+# NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+# THIS CODE.  IBM shall not be liable for any damages arising out of
+# your use of the sample code, even if they have been advised of the
+# possibility of such damages.
+#
+# DISTRIBUTION.
+# This sample code can be freely distributed, copied, altered, and
+# incorporated into other software, provided that it bears the above
+# Copyright notice and DISCLAIMER intact.
+
+
+# Boreland C++ makefile for SOM TMS "hanoi" sample 
+
+CPPC      = bcc
+CPPFLAGEXE= -D_OS2 -w- -c -v -sm -Pcpp -I$(BORBASE)\include;$(INCLUDE)
+CPPFLAGDLL= -D_OS2 -w- -c -v -sm -sd -Pcpp -I$(BORBASE)\include;$(INCLUDE) 
+LINKER    = tlink
+LFLAGEXE  = /A:4 /S:1000000 /ap /c /v /Toe /w-stk /L$(LIB)$(SOMBASE)\lib;$(BORBASE)\lib;
+LFLAGDLL  = /A:4 /S:1000000 /ap /c /v /Tod /w-stk /L$(LIB)$(SOMBASE)\lib;$(BORBASE)\lib;
+LIBLIST   = c2mt os2 somtk 
+BCINIT    = $(BORBASE)\lib\c02
+BCINITD   = $(BORBASE)\lib\c02d
+INCLS    = hanoi.xh
+OBJS     = hanoi.obj traninv.obj trancoor.obj hanres.obj phanres.obj initmod.obj
+OBJNAMES = hanoi traninv trancoor hanres phanres initmod
+SVRIDL   = hanoi.idl traninv.idl hanres.idl phanres.idl trancoor.idl hancon.idl
+SVRXH    = hanoi.xh traninv.xh hanres.xh phanres.xh trancoor.xh hancon.xh
+SVRXIH   = hanoi.xih traninv.xih hanres.xih phanres.xih trancoor.xih
+
+.SUFFIXES: .obj .cpp .xih .xh .idl
+
+.cpp.obj:
+	$(CPPC) $(CPPFLAGDLL) $<
+	$(CPPC) $(CPPFLAGDLL) $*.cpp
+        scobj $*.obj
+
+.idl.xih:
+	sc -sxih -S200000 $<
+
+.idl.xh:
+	sc -sxh -S200000 $<
+
+all: $(SOMBASE)\include\somxh.bld usage client.exe hanoi.dll hanoi.lib som.ir somdimpl
+
+client.exe: client.obj hanoi.lib 
+	$(LINKER) $(LFLAGEXE) $(BCINIT) client.obj,$@,NUL,$(LIBLIST) hanoi;
+
+client.obj: client.cpp $(SVRXH) 
+	$(CPPC) $(CPPFLAGEXE) client.cpp
+        scobj client.obj
+        scobj -sSOMD_ObjectMgr client.obj 
+        scobj -sSOMD_SOMOAObject client.obj 
+        scobj -sSOMD_ImplDefObject client.obj 
+        scobj -sSOMStartThread client.obj 
+        scobj -sSOMD_ImplRepObject client.obj 
+
+
+hanoi.dll: $(OBJS) hanoi.def 
+	$(LINKER) /m /Gm $(LFLAGDLL) $(BCINITD) $(OBJNAMES),$@,NUL,$(LIBLIST),hanoi.def
+
+hanoi.def: $(SVRIDL)
+        sc -sdef hanoi.idl
+        sc -sdef traninv.idl
+        sc -sdef trancoor.idl
+        sc -sdef hanres.idl
+        sc -sdef phanres.idl
+
+hanoi.obj: hanoi.xih $(SVRXH) hanoi.cpp 
+
+traninv.obj: traninv.xih $(SVRXH) traninv.cpp 
+
+hanres.obj: hanres.xih $(SVRXH) hanres.cpp 
+
+phanres.obj: phanres.xih $(SVRXH) phanres.cpp 
+
+trancoor.obj: trancoor.xih $(SVRXH) trancoor.cpp
+
+initmod.obj: $(SVRXH) initmod.cpp
+
+hanoi.lib: hanoi.dll hanoi.def
+        implib hanoi.lib hanoi.def
+
+hanoi.xh: $(SVRIDL)
+
+hanoi.xih: $(SVRIDL)
+
+traninv.xh: $(SVRIDL)
+
+traninv.xih: $(SVRIDL)
+
+hanres.xh: $(SVRIDL)
+
+hanres.xih: $(SVRIDL)
+
+phanres.xh: $(SVRIDL)
+
+phanres.xih: $(SVRIDL)
+
+trancoor.xh: $(SVRIDL)
+
+trancoor.xih: $(SVRIDL)
+
+som.ir:
+        sc -sir -u -S200000 -mnolock hanoi.idl
+        sc -sir -u -S200000 -mnolock traninv.idl
+        sc -sir -u -S200000 -mnolock trancoor.idl
+        sc -sir -u -S200000 -mnolock hanres.idl
+        sc -sir -u -S200000 -mnolock phanres.idl
+
+### -- Build the DSOM Implementation Repository.
+somdimpl:
+        -regimpl -A -i hanoiServer1 -p somossvr.exe -v somOS::Server -m on
+        -regimpl -a -i hanoiServer1 -c Hanoi -c TranInv -c HanoiResource -c PersistentHanoiResource -c TranCoord -c somPersistencePOSIX::PID_POSIX -c somPersistencePOSIX::PDS_POSIX -c somStream::StreamIO
+        -regimpl -A -i hanoiClient1 -p Client -v somOS::Server -m on
+        @echo x > somdimpl
+
+usage:
+	@echo See the README file in this directory for information on executing the sample.
+
+$(SOMBASE)\include\somxh.bld:
+	@echo This sample requires that the SOM toolkit C++ bindings have been built
+	@echo with the somxh command.
+	@exit 1
+
+clean:  cleanimpl
+	-del som.ir client.exe hanoi.lib hanoi.dll $(SVRXH) $(SVRXIH) *.obj >nul 2>&1
+
+cleanimpl:
+        -regimpl -D -i hanoiServer1
+        -regimpl -D -i hanoiClient1
+        -del somdimpl >nul 2>&1
+
+cycle: cyclesvr cyclecli
+
+cyclesvr: 
+        -regimpl -D -i hanoiServer1
+        -regimpl -A -i hanoiServer1 -p somossvr.exe -v somOS::Server -m on
+        -regimpl -a -i hanoiServer1 -c Hanoi -c TranInv -c HanoiResource -c PersistentHanoiResource -c TranCoord -c somPersistencePOSIX::PID_POSIX -c somPersistencePOSIX::PDS_POSIX -c somStream::StreamIO
+
+cyclecli:
+        -regimpl -D -i hanoiClient1
+        -regimpl -A -i hanoiClient1 -p Client -v somOS::Server -m on
+

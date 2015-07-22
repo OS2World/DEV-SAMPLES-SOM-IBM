@@ -1,0 +1,96 @@
+//# Description: Class definition for frame information class
+//#
+//# Author:      Joseph H McIntyre
+//#
+//# (C) COPYRIGHT Apple Computer Inc 1994
+//# (C) COPYRIGHT International Business Machines Corp. 1995, 1996
+//# All Rights Reserved
+//# Licensed Materials - Property of IBM
+//#
+//# US Government Users Restricted Rights - Use, duplication or
+//# disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+//#
+//# DISCLAIMER OF WARRANTIES.  The following [enclosed] code is
+//# sample code created by IBM Corporation. This sample code is not
+//# part of any standard or IBM product and is provided to you solely
+//# for the purpose of assisting you in the development of your
+//# applications.  The code is provided "AS IS", without
+//# warranty of any kind.  IBM shall not be liable for any damages
+//# arising out of your use of the sample code, even if they have been
+//# advised of the possibility of such damages.
+
+#ifndef _BASEINFO_
+#define _BASEINFO_
+
+#include "part.idl"
+
+interface ODWindow;
+interface jmBaseList;
+
+
+interface jmBaseFrameInfo : SOMObject
+ {
+    attribute ODBoolean  reactivateFrame;
+    attribute ODFacet    activeFacet;
+    attribute ODFrame    sourceFrame;
+    attribute ODWindow   partWindow;
+    attribute jmBaseList attachedFrames;
+
+    void      InitFromStorage (in ODStorageUnitView storageUnitView, in ODType kPartInfo);
+    void      Externalize (in ODStorageUnitView storageUnitView, in ODType kPartInfo);
+    void      ExternalizeFrameInfo (in ODStorageUnit storageUnit, in ODDraftKey key, in ODFrame scopeFrame, in ODType kPartInfo);
+    void      CloneInto (in ODDraftKey key, in ODStorageUnitView storageUnitView, in ODFrame scopeFrame, in ODType kPartInfo);
+
+    ODBoolean HasSourceFrame ();
+    void      ReleaseSourceFrame ();
+    void      AttachFrame (in ODFrame frame);
+    void      DetachFrame (in ODFrame frame);
+    ODBoolean HasAttachedFrames ();
+    ODBoolean HasPartWindow ();
+
+    ODBoolean IsFrameActive ();
+    void      SetFrameActive (in ODBoolean active);
+
+    #ifdef __SOMIDL__
+    implementation
+     {
+        majorversion   = 1;
+        minorversion   = 0;
+        dllname        = "jmbase.dll";
+
+        releaseorder:
+            _get_reactivateFrame,
+            _set_reactivateFrame,
+            _get_activeFacet,
+            _set_activeFacet,
+            _get_sourceFrame,
+            _set_sourceFrame,
+            _get_partWindow,
+            _set_partWindow,
+            _get_attachedFrames,
+            _set_attachedFrames,
+            InitFromStorage,
+            Externalize,
+            ExternalizeFrameInfo,
+            CloneInto,
+            ReleaseSourceFrame,
+            HasSourceFrame,
+            AttachFrame,
+            DetachFrame,
+            HasAttachedFrames,
+            HasPartWindow,
+            IsFrameActive,
+            SetFrameActive;
+
+        override:
+            somDefaultInit,
+            somDestruct;
+
+        // method overrides
+        somDefaultInit: init;
+
+        ODBoolean frameActive;
+     };
+    #endif
+ };
+#endif

@@ -1,0 +1,78 @@
+// 3/8/96 15:42:26
+/*
+#
+#
+#    25H7912  (C)  COPYRIGHT International Business Machines Corp. 1996
+#   All Rights Reserved
+#   Licensed Materials - Property of IBM
+#   US Government Users Restricted Rights - Use, duplication or
+#   disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+*/
+/*
+ *
+ *
+ * DISCLAIMER OF WARRANTIES.
+ * The following [enclosed] code is sample code created by IBM
+ * Corporation. This sample code is not part of any standard or IBM
+ * product and is provided to you solely for the purpose of assisting
+ * you in the development of your applications.  The code is provided
+ * "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+ * NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+ * THIS CODE.  IBM shall not be liable for any damages arising out of
+ * your use of the sample code, even if they have been advised of the
+ * possibility of such damages.
+ *
+ * DISTRIBUTION.
+ * This sample code can be freely distributed, copied, altered, and
+ * incorporated into other software, provided that it bears the above
+ * Copyright notice and DISCLAIMER intact.
+ */
+
+#ifndef dappt_idl
+#define dappt_idl
+
+#include <appt.idl>
+
+interface DistributeAppointment : SOMObject
+{
+  // A DistributeAppointment is a class to distribute appointments which has
+  // multiple users.  When a client uses an appointment the number
+  // of users of this appointment is incremented with the incrementUsers method.
+  // When that client is through using the appointment, the number of users of the
+  // appointment is decremented with the decrementUsers method
+
+    attribute string appointmentName;
+    // This attribute maintains the name of the appointment.
+    attribute long numberOfUsers;
+    // This attribute maintains the number of users of the appointment.
+
+    void incrementUsers();
+    //The incrementUsers method will increment the number of books using an
+    // appointment
+    void decrementUsers();
+    //The decrementUsers method will decrement the number of books using an
+    //appointment
+
+    #ifdef __SOMIDL__
+      implementation {
+        dllname = "apptbk.dll";
+        releaseorder: _set_appointmentName, _get_appointmentName,
+                      incrementUsers, decrementUsers,
+                      _get_numberOfUsers,_set_numberOfUsers;
+
+        // Method Modifiers
+        somDefaultInit: override, init;
+        somDestruct:    override;
+
+        // Attribute modifiers
+        appointmentName: noset;
+
+        // The factory modifier indicates which factory class can create
+        // instances of the DistributeAppointment class
+        factory=AppointmentBookFactory;
+
+      };
+    #endif /* __SOMIDL__ */
+};
+#endif /* dapptbk_idl */

@@ -1,0 +1,62 @@
+#   @(#) 1.5 src/somples.os2/somi/c/irdump/makefile.mtw, somx.somi, som2.5, s259604a 1/18/96 18:00:27 [1/24/96 18:00:20]
+#
+#   COMPONENT_NAME: somx
+#
+#   ORIGINS: 27
+#
+#
+#    25H7912  (C)  COPYRIGHT International Business Machines Corp. 1992,1996,1996  
+#   All Rights Reserved
+#   Licensed Materials - Property of IBM
+#   US Government Users Restricted Rights - Use, duplication or
+#   disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+#
+
+# DISCLAIMER OF WARRANTIES.
+# The following [enclosed] code is sample code created by IBM
+# Corporation. This sample code is not part of any standard or IBM
+# product and is provided to you solely for the purpose of assisting
+# you in the development of your applications.  The code is provided
+# "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+# NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+# THIS CODE.  IBM shall not be liable for any damages arising out of
+# your use of the sample code, even if they have been advised of the
+# possibility of such damages.
+#
+# DISTRIBUTION.
+# This sample code can be freely distributed, copied, altered, and
+# incorporated into other software, provided that it bears the above
+# Copyright notice and DISCLAIMER intact.
+
+# Makefile for: irdump
+
+# MetaWare High-C C++ Compiler
+CC         = $(HCDIR)\bin\hc
+INCLUDES   = -I. -I$(HCDIR)/inc -Hipname=INCLUDE
+OBJS       = $(HCDIR)\lib\startup.obj irdump.obj
+CFLAGS     = -D_OS2 -c -g -Ml -Hthread -Hnopro $(INCLUDES) -w0
+LINKER     = link386
+LFLAGS     = /packd /packc /exepack /align:4 /stack:360000 /pm:vio /noi /nol
+LIBLIST    = os2386+somtk+$(HCDIR)\lib\hct
+
+
+irdump.exe: $(SOMBASE)\include\somcorba.bld $(OBJS)
+	$(LINKER) $(LFLAGS) $(OBJS),$@,NUL,$(LIBLIST), NUL;
+
+clean:
+	-del irdump.obj irdump.exe som.ir >nul 2>&1
+
+$(SOMBASE)\include\somcorba.bld:
+	@echo This sample requires the CORBA-style C bindings
+	@echo created using the somcorba command.
+	@exit 1
+
+$(HCDIR)\lib\startup.obj:
+ @echo This makefile needs HCDIR to be set. Please do the following:
+ @echo set HCDIR=where\metaware\compiler\is\installed
+ @exit 1
+
+irdump.obj: irdump.c
+	$(CC) $(CFLAGS) irdump.c
+

@@ -1,0 +1,80 @@
+/*
+ *
+ *   25H7912  (C)  COPYRIGHT International Business Machines Corp. 1992,1996,1996
+ *  All Rights Reserved
+ *  Licensed Materials - Property of IBM
+ *  US Government Users Restricted Rights - Use, duplication or
+ *  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+ */
+
+/*
+ *
+ * DISCLAIMER OF WARRANTIES.
+ * The following [enclosed] code is sample code created by IBM
+ * Corporation. This sample code is not part of any standard or IBM
+ * product and is provided to you solely for the purpose of assisting
+ * you in the development of your applications.  The code is provided
+ * "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+ * NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+ * THIS CODE.  IBM shall not be liable for any damages arising out of
+ * your use of the sample code, even if they have been advised of the
+ * possibility of such damages.
+ *
+ * DISTRIBUTION.
+ * This sample code can be freely distributed, copied, altered, and
+ * incorporated into other software, provided that it bears the above
+ * Copyright notice and DISCLAIMER intact.
+ */
+
+#ifndef vehicle_IDL
+#define vehicle_IDL
+
+#include <somobj.idl>
+#include <somlc.idl>
+
+interface vehicle : somLifeCycle::LifeCycleObject
+{
+// CLASS NAME: vehicle
+//
+// DESCRIPTION: vehicle class is used to describe an automibile
+//
+// NEW METHODS:
+//	setvehicle -- sets the vehicle attributes including make, model, and year
+//	displayvehicle -- returns a character string of the vehicle attributes
+//		the corrdinates of the vehicle.
+//
+// OVERRIDING METHODS:
+//	somInit
+
+  attribute string make;
+  attribute string model;
+  attribute string year;
+  attribute long mpg;
+  attribute long miles;
+  void setvehicle(in string make, in string model, in string year, in long mpg, in long miles);
+  string displayvehicle();
+
+#ifdef __SOMIDL__
+    implementation {
+      releaseorder:
+ setvehicle, displayvehicle,
+ _get_make, _set_make, _get_model, _set_model, _get_year, _set_year, _get_mpg, _set_mpg, _get_miles, _set_miles;
+
+      dllname = "vehicle.dll";  // The name of the DLL where the code will be placed.
+      baseproxyclass = "somLifeCycle::LifeCycleObject__Proxy";
+
+
+      somInit: override;
+
+  #ifdef __PRIVATE__
+  #endif /* __PRIVATE__ */
+ };
+#endif /* __SOMIDL__ */
+
+};
+
+#endif /* vehicle_IDL */
+
+
+

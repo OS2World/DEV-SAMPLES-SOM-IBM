@@ -1,0 +1,207 @@
+# 3/11/96 12:26:57
+#
+#
+#    25H7912  (C)  COPYRIGHT International Business Machines Corp. 1996
+#   All Rights Reserved
+#   Licensed Materials - Property of IBM
+#   US Government Users Restricted Rights - Use, duplication or
+#   disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+#
+#
+#  DISCLAIMER OF WARRANTIES.
+#  The following [enclosed] code is sample code created by IBM
+#  Corporation. This sample code is not part of any standard or IBM
+#  product and is provided to you solely for the purpose of assisting
+#  you in the development of your applications.  The code is provided
+#  "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+#  NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+#  FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+#  THIS CODE.  IBM shall not be liable for any damages arising out of
+#  your use of the sample code, even if they have been advised of the
+#  possibility of such damages.
+#
+#  DISTRIBUTION.
+#  This sample code can be freely distributed, copied, altered, and
+#  incorporated into other software, provided that it bears the above
+#  Copyright notice and DISCLAIMER intact.
+#
+# This make file has settings for IBM C Set ++ version 2.x for OS/2
+# It may be used with the nmake program.
+#
+
+# General settings
+MAKEFILE     = makefile
+SYS          = OS2
+CC           = icc
+CPPC         = icc
+SC           = sc
+LINKER       = link386
+IMPLIB       = implib
+RM           = del
+OBJ          = obj
+CFLAGS       = $(DLL_CFLAGS)
+CPPFLAGS     = $(DLL_CPPFLAGS)
+SCFLAGS      = -S100000 -p
+TARGETS      = $(DLL_TARGET).$(DLL_EXT) $(EXE_TARGET).$(EXE_EXT) $(RES_TARGET)
+CLEANFILES   = $(DLL_TARGET).$(DLL_LIBEXT) $(DLL_TARGET).$(DLL_DEF) $(DLL_INITMOD).* $(TARGETS)
+
+# EXE build settings
+EXE_CFLAGS   = -W3 -c -Ti+ -Q+ -Gd- -Gm+ -Gs+ -Sm -Ss+
+EXE_CPPFLAGS = -W3 -c -Ti+ -Q+ -Gd- -Gm+ -Gs+ -Sm
+EXE_LFLAGS   = /exepack /packd /packc /align:4 /stack:360000 /pm:pm  /noe /noi /nol /co
+EXE_OBJS     =  phase2.obj ndialog.obj mdialog.obj udialog.obj msgbox.obj chkenvmb.obj
+EXE_SYSOBJS  =
+EXE_LIBS     = apptbk somtk os2386 dde4mbs dde4muii
+EXE_TARGET   = somsamp
+EXE_EXT      = exe
+EXE_IDLS     =
+EXE_CSRC     =
+EXE_CPPSRC   = phase2.cpp ndialog.cpp mdialog.cpp udialog.cpp msgbox.cpp chkenvmb.cpp
+
+# RES build settings
+RES_LIST     = somsamp.rc
+RES_TARGET   = somsamp.res
+
+# DLL build settings
+DLL_INITMOD  = sinitmod
+DLL_CFLAGS   = -W3 -c -Ti+ -Q+ -Gd- -Gm+ -Gs+ -Ge- -Sm -Ss+
+DLL_CPPFLAGS = -W3 -c -Ti+ -Q+ -Gd- -Gm+ -Gs+ -Ge- -Sm
+DLL_LFLAGS   = /exepack /packd /packc /align:4 /stack:360000 /pm:vio /noe /noi /nol /co
+DLL_OBJS     =  APPT.obj APPTBOOK.obj CCALL.obj KEY.obj MTG.obj sinitmod.obj
+DLL_SYSOBJS  =
+DLL_LIBS     = somtk os2386
+DLL_TARGET   = apptbk
+DLL_EXT      = dll
+DLL_LIBEXT   = lib
+DLL_DEF      = def
+DLL_IDLS     = APPT.IDL APPTBOOK.IDL CCALL.IDL KEY.IDL MTG.IDL
+DLL_CSRC     =
+DLL_CPPSRC   = APPT.cpp APPTBOOK.cpp CCALL.cpp KEY.cpp MTG.cpp
+
+all: $(TARGETS)
+
+# DLL target
+$(DLL_TARGET).$(DLL_EXT): $(DLL_OBJS) $(DLL_TARGET).$(DLL_LIBEXT)
+        $(LINKER) $(DLL_LFLAGS) $(DLL_OBJS) $(DLL_SYSOBJS),$@,NUL,$(DLL_LIBS),$(DLL_TARGET).$(DLL_DEF)
+
+# DLL "Import" library target
+$(DLL_TARGET).$(DLL_LIBEXT): $(DLL_TARGET).$(DLL_DEF)
+        $(IMPLIB) $(DLL_TARGET).$(DLL_LIBEXT) $(DLL_TARGET).$(DLL_DEF)
+
+# DLL exports file
+$(DLL_TARGET).$(DLL_DEF): $(DLL_IDLS)
+        $(SC) $(SCFLAGS) -s$(DLL_DEF) -mdll=$(DLL_TARGET) $(DLL_IDLS)
+
+# DLL SOMInitModule function
+$(DLL_INITMOD).$(OBJ): $(DLL_INITMOD).c
+        $(CC) $(DLL_CFLAGS) $*.c
+
+$(DLL_INITMOD).c: $(DLL_IDLS)
+        $(SC) $(SCFLAGS) -simod -mdll=$(DLL_TARGET) -mimod=$@ $(DLL_IDLS)
+
+# EXE target
+$(EXE_TARGET).$(EXE_EXT): $(EXE_OBJS)
+        $(LINKER) $(EXE_LFLAGS) $(EXE_OBJS) $(EXE_SYSOBJS),$@,NUL,$(EXE_LIBS);
+       -RC -d__OS2__ $(RES_TARGET) $(EXE_TARGET).$(EXE_EXT)
+
+# RES target
+$(RES_TARGET): $(RES_LIST)
+        RC -d__OS2__ -r $*.RC
+
+# Clean up files that can be re-built
+clean:
+        -del *.$(OBJ) >nul 2>&1
+        -del *.ih >nul 2>&1
+        -del *.xih >nul 2>&1
+        -del *.xh >nul 2>&1
+        -del *.ir >nul 2>&1
+        -del $(CLEANFILES) >nul 2>&1
+
+
+# Suffix rules for building source files
+.SUFFIXES: .$(OBJ) .cpp .c .xih .xh .ih .h .idl
+
+.cpp.$(OBJ):
+        $(CPPC) $(CPPFLAGS) $<
+
+
+.c.$(OBJ):
+        $(CC) $(CFLAGS) $<
+
+
+.idl.cpp:
+        $(SC) $(SCFLAGS) -usir;xc $<
+
+
+.idl.c:
+        $(SC) $(SCFLAGS) -usir;c $<
+
+
+.idl.xih:
+        $(SC) $(SCFLAGS) -usir;xih $<
+
+
+.idl.xh:
+        $(SC) $(SCFLAGS) -usir;xh $<
+
+
+.idl.ih:
+        $(SC) $(SCFLAGS) -usir;ih $<
+
+
+.idl.h:
+        $(SC) $(SCFLAGS) -usir;h $<
+
+
+# Dependencies follow
+phase2.obj: appt.xh mtg.xh ccall.xh apptbook.xh key.xh samptype.h somsamp.h somsamp.hpp somsamp.res mdialog.hpp ndialog.hpp udialog.hpp msgbox.hpp phase2.cpp
+        $(CPPC) $(EXE_CPPFLAGS) phase2.cpp
+
+ndialog.obj: ndialog.cpp somsamp.h ndialog.hpp
+        $(CPPC) $(EXE_CPPFLAGS) ndialog.cpp
+
+mdialog.obj: mdialog.cpp somsamp.h mdialog.hpp appt.xh mtg.xh ccall.xh
+        $(CPPC) $(EXE_CPPFLAGS) mdialog.cpp
+
+udialog.obj: udialog.cpp somsamp.h udialog.hpp appt.xh ccall.xh mtg.xh apptbook.xh
+        $(CPPC) $(EXE_CPPFLAGS) udialog.cpp
+
+msgbox.obj: msgbox.cpp msgbox.hpp somsamp.h
+        $(CPPC) $(EXE_CPPFLAGS) msgbox.cpp
+
+chkenvmb.obj: appt.xh mtg.xh ccall.xh apptbook.xh key.xh samptype.h chkenvmb.cpp
+        $(CPPC) $(EXE_CPPFLAGS) chkenvmb.cpp
+
+APPT.xih: APPT.IDL
+APPT.xh: APPT.IDL
+
+APPTBOOK.xih: appt.idl mtg.idl ccall.idl APPTBOOK.IDL
+APPTBOOK.xh: appt.idl mtg.idl ccall.idl APPTBOOK.IDL
+
+CCALL.xih: appt.idl CCALL.IDL
+CCALL.xh: appt.idl CCALL.IDL
+
+KEY.xih: KEY.IDL appt.idl
+KEY.xh: KEY.IDL appt.idl
+
+MTG.xih: appt.idl MTG.IDL
+MTG.xh: appt.idl MTG.IDL
+
+APPT.obj: APPT.cpp appt.xih APPT.xh samptype.h
+        $(CPPC) $(DLL_CPPFLAGS) APPT.cpp
+
+APPTBOOK.obj: APPTBOOK.cpp appt.xh mtg.xh ccall.xh apptbook.xih APPTBOOK.xh samptype.h key.xh
+        $(CPPC) $(DLL_CPPFLAGS) APPTBOOK.cpp
+
+CCALL.obj: CCALL.cpp ccall.xih CCALL.xh appt.xh samptype.h
+        $(CPPC) $(DLL_CPPFLAGS) CCALL.cpp
+
+KEY.obj: KEY.cpp appt.xh key.xih KEY.xh
+        $(CPPC) $(DLL_CPPFLAGS) KEY.cpp
+
+MTG.obj: MTG.cpp mtg.xih MTG.xh appt.xh samptype.h
+        $(CPPC) $(DLL_CPPFLAGS) MTG.cpp
+
+
+
+

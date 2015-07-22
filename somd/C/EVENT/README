@@ -1,0 +1,157 @@
+#
+#   COMPONENT_NAME: somx
+#
+#   ORIGINS: 27
+#
+#
+#    25H7912  (C)  COPYRIGHT International Business Machines Corp. 1992,1996,1996  
+#   All Rights Reserved
+#   Licensed Materials - Property of IBM
+#   US Government Users Restricted Rights - Use, duplication or
+#   disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+#
+/*
+ *  @(#) 2.12 src/somples.os2/somd/c/event/readme, somx.somd, som2.5, s259604a 12/26/95 17:41:52 [1/24/96 17:31:04]
+ */
+
+/*
+ *
+ * DISCLAIMER OF WARRANTIES.
+ * The following [enclosed] code is sample code created by IBM
+ * Corporation. This sample code is not part of any standard or IBM
+ * product and is provided to you solely for the purpose of assisting
+ * you in the development of your applications.  The code is provided
+ * "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+ * NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+ * THIS CODE.  IBM shall not be liable for any damages arising out of
+ * your use of the sample code, even if they have been advised of the
+ * possibility of such damages.
+ *
+ * DISTRIBUTION.
+ * This sample code can be freely distributed, copied, altered, and
+ * incorporated into other software, provided that it bears the above
+ * Copyright notice and DISCLAIMER intact.
+ */
+
+NOTE:  Please review the README file in %SOMBASE%\samples\somd for general
+       information on setting up and running DSOM samples.  This README
+       assumes that information.
+
+Sample summary
+--------------
+This directory contains the DSOM/C "Event Services" sample.  The Event Service
+interface definitions are in eventch.idl and eventcom.idl.  The Event Service
+sample program is based on the Consumer-Supplier paradigm for events.  The
+Supplier generates events and pushes them onto an Event Channel.  The Consumer
+polls the Event Channel and when an appropriate event appears, it is
+processed.
+
+In this sample, the Supplier updates the value of a spreadsheet cell and puts
+the updated value in the Event Channel. The Consumer, which is polling the
+Event Channel for a change in the cell value, pulls the new value from the
+Event Channel and displays it.
+
+The Consumer, in this example, picks up only the last update to the cell
+value.  If the Supplier makes several cell updates between two Consumer
+polling cycles only the latest value of the cell is passed on to the Consumer.
+
+
+Making the sample
+-----------------
+BEFORE making the sample, the DSOM daemon "somdd" must be running (either
+in the background or in a separate OS/2 command window) and the Name Service
+must have been configured using som_cfg, as described in the README file in
+%SOMBASE%\samples\somd.  This is because the makefile for the sample
+registers the servers and classes in the Name Service.
+
+The makefile in this directory will build client executables, a server
+executable and a dynamically loadable library.  They are:
+
+ - eventc.dll (the library loaded by the server)
+
+ - eventsvr.exe (the persistent Event Channel server)
+
+ - eventcli.exe (the client program which acts as a Supplier for events)
+
+ - consumer.exe (the Consumer part of the example)
+
+Entering "nmake" will not only build the above but it will also
+build the interface and implementation repositories that the
+servers will utilize.
+
+Running the sample
+------------------
+Before running the sample, remember to start the DSOM daemon "somdd" in this
+directory. If the daemon is currently running you must first kill it and
+restart it in this directory.  
+
+To start the daemon, enter:
+
+   start /c /f somdd
+
+Once the daemon is started, you will need three command entry windows to
+run the sample.  Start two new command entry windows in addition to the one 
+you built the sample from, and then follow the directions below.
+
+In the first window, run the event server program eventsvr:
+
+   eventsvr cellServer1
+
+From the second window start the client program eventcli:
+
+   eventcli
+
+From the third window start the Consumer program:
+
+   consumer
+
+Now, from the window running the Consumer program, press return (Enter) to
+have the consumer process begin polling. It should immediately discover
+a new cell value of 10. It will then prompt again to poll. Press return
+to begin polling. Because the cell value has not yet been changed you will
+continuously see the message "Event Channel yet to be notified".
+
+Go to the window running the client program and press return in response to
+the prompt "Increment cell value by 1?". The process will increment the
+value of the cell, post the event and repeat the prompt. Note that the
+consumer process has been notified of the update to the cell and has
+displayed the new value of the cell.
+
+You can continue to go back and forth between the client and the consumer to
+experiment with the sample.
+
+To terminate the sample programs, first quit out of eventcli and consumer by
+typing 'q' or 'Q'. Then, terminate eventsvr by typing <ctrl-c> in the window
+in which it is running and finally kill somdd.
+
+To run the event sample across two different machines, the following
+differences apply:
+
+1.  The Implementation Repository must be updated with the hostname
+    of the server machine.
+2.  The somdd daemon must be started on the server machine prior to
+    running the sample.
+3.  The server program should be started on the server machine only
+    (by executing "eventsvr cellServer1").
+4.  After the server program has displayed the message
+    "Event Server going into the execute_request_loop",
+    copy files "event.rep" and "cell.rep" from the server machine
+    to the client machine (in the directory in which the client
+    programs will be run) before starting the "eventcli" and
+    "consumer" client programs.
+5.  Run "eventcli" and "consumer" on the client machine only.
+
+Cleaning up the sample
+----------------------
+BEFORE cleaning up the sample, the DSOM daemon "somdd" must be running (either
+in the background or in a separate OS/2 command window).  This is because the 
+makefile for the sample deregisters the servers and classes in the Name Service.
+
+Terminate all the instances of somdsvr.  This is because the servers will have
+the som.ir and dlls locked so they can't be erased.  To clean up the sample,
+enter "nmake clean".  This will delete all non-source files and deregister itself
+from the Name Service and Implementation Repository.
+
+The daemon "somdd" will restart the naming server to deregister the sample.
+

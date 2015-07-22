@@ -1,0 +1,197 @@
+
+#ifndef MemoryManagement_IDL
+#define MemoryManagement_IDL
+/*
+ *
+ *
+ *  25H7912  (C)  COPYRIGHT International Business Machines Corp. 1992,1996,1996
+ *  All Rights Reserved
+ *  Licensed Materials - Property of IBM
+ *  US Government Users Restricted Rights - Use, duplication or
+ *  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+ *
+ *
+ *
+ *
+ *  DISCLAIMER OF WARRANTIES.
+ *  The following [enclosed] code is sample code created by IBM
+ *  Corporation. This sample code is not part of any standard or IBM
+ *  product and is provided to you solely for the purpose of assisting
+ *  you in the development of your applications.  The code is provided
+ *  "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+ *  NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+ *  THIS CODE.  IBM shall not be liable for any damages arising out of
+ *  your use of the sample code, even if they have been advised of the
+ *  possibility of such damages.
+ *
+ *  DISTRIBUTION.
+ *  This sample code can be freely distributed, copied, altered, and
+ *  incorporated into other software, provided that it bears the above
+ *  Copyright notice and DISCLAIMER intact.
+ *
+ *
+ *
+ *  MemoryManagement.idl
+ *
+ *  The interface decribed below is used to demonstrate the different
+ * memory management policies. And to show how in, out and inout
+ * parameters are used. With the makefile which is shipped with the
+ * sample, it is possible to create a single executable version of the
+ * code. The memory management scheme will be set based on the variables
+ * which are passed to the compilers. However, the output of the sample
+ * is the same no matter which memory management policy is used. The
+ * most interesting part of the sample is examining the code to see how
+ * freeing the memory changes based on the policy.
+ *
+ * Overview:
+ *   There are 3 basic type of memory memory management demonstrated:
+ *     caller owned -- This is the default memory management policy, this
+ *         can also be identified by using the modifier:
+ *               memory_management = corba;
+ *         using the memory_management modifier applies to all the
+ *         attributes and returned values from an object, where as the
+ *         modifier caller_owns_result and caller_owns_parameters can be
+ *         specified on a method by method basis. For this memory policy
+ *         the caller is responsible for freeing all the memory which is
+ *         allocated by the object and the calling program.
+ *
+ *     object owned -- This memory management policy is a modifier that
+ *         must be specified at the method level. This identifies the
+ *         parameters and return values which the object ownes, the
+ *         caller should not modify or destroy any such values, the
+ *         object is responsible for destroying these values. When using
+ *         object owned and DSOM, storage for out, inout and returned values
+ *         is created in the proxy, this storage is held until the proxy is
+ *         destroyed or the caller invokes the somdReleaseResources on the
+ *         proxy. This will free all the storage which the proxy has
+ *         accumulated on previous calls.
+ *
+ *      dual owned -- This memory management policy is a modifier that
+ *         must be specified at the method level.
+ *	   This is a combination of caller owns and object owns
+ *         and only applies when the objects are distributed (DSOM). In
+ *         this policy the caller is responsible for destroying all
+ *         out, inout and result storage. On the server side, the
+ *         implementation of the policy is the same as the object owned
+ *         policy.
+ *
+ *
+ **********************************************************************/
+
+
+#include <somobj.idl>
+
+interface SupportObject;
+
+
+interface MemoryManagement : SOMObject
+{
+
+  /* Declare methods for sample */
+
+  long longMethod(in long inParameter, out long outParameter, inout long inOutParameter);
+
+  string stringMethod(in string inParameter, out string outParameter, inout string inOutParameter);
+
+  sequence<long> * sequenceMethod(in sequence<long> inParameter,
+                                out sequence<long> * outParameter,
+                                inout sequence<long> * inOutParameter);
+
+  SupportObject objectMethod(in SupportObject inParameter,
+                             out SupportObject outParameter,
+                             inout SupportObject inOutParameter);
+
+  void octetMethod(in octet inParameter[100],
+                    out octet outParameter[100],
+                    inout octet inOutParameter[100]);
+
+  void arrayMethod(in long inParameter[10],
+                             out long outParameter[10],
+                             inout long inOutParameter[10]);
+
+  any * anyMethod(in any inParameter,
+                out any * outParameter,
+                inout any * inOutParameter);
+
+#ifdef __SOMIDL__
+    implementation
+    {
+  #ifdef __MEMORY_MGMT_OBJECT_OWNED__
+      longMethod     : object_owns_result;
+      longMethod     : object_owns_parameters = "inParameter, outParameter, inOutParameter";
+      stringMethod   : object_owns_result;
+      stringMethod   : object_owns_parameters = "inParameter, outParameter, inOutParameter";
+      sequenceMethod : object_owns_result;
+      sequenceMethod : object_owns_parameters = "inParameter, outParameter, inOutParameter";
+      objectMethod   : object_owns_result;
+      objectMethod   : object_owns_parameters = "inParameter, outParameter, inOutParameter";
+      octetMethod    : object_owns_parameters = "inParameter, outParameter, inOutParameter";
+      arrayMethod    : object_owns_result;
+      anyMethod      : object_owns_result;
+      anyMethod      : object_owns_parameters = "inParameter, outParameter, inOutParameter";
+  #else
+   #if defined(__MEMEORY_MGMT_DUAL_OWNED__)
+      longMethod     : dual_owned_result;
+      longMethod     : dual_owned_parameters = "inParameter, outParameter, inOutParameter";
+      stringMethod   : dual_owned_result;
+      stringMethod   : dual_owned_parameters = "inParameter, outParameter, inOutParameter";
+      sequenceMethod : dual_owned_result;
+      sequenceMethod : dual_owned_parameters = "inParameter, outParameter, inOutParameter";
+      objectMethod   : dual_owned_result;
+      objectMethod   : dual_owned_parameters = "inParameter, outParameter, inOutParameter";
+      octetMethod    : dual_owned_result;
+      octetMethod    : dual_owned_parameters = "inParameter, outParameter, inOutParameter";
+      arrayMethod    : dual_owned_result;
+      arrayMethod    : dual_owned_parameters = "inParameter, outParameter, inOutParameter";
+      anyMethod      : dual_owned_result;
+      anyMethod      : dual_owned_parameters = "inParameter, outParameter, inOutParameter";
+
+   #else
+   /* Use the default memory management scheme */
+      memory_management = corba;
+   /* This statement is the same as identifing the caller owners the parameters */
+   /* longMethod     : caller_owned_result; */
+   /* longMethod     : caller_owned_parameters = "inParameter, outParameter, inOutParameter"; */
+   /* etc ... */
+   #endif
+  #endif
+
+  // declare storage so that the object can keep track of the memory between calls
+  #if (defined(__MEMORY_MGMT_OBJECT_OWNED__) || defined(__MEMORY_MGMT_DUAL_OWNED__))
+     string  saveReturnString, saveInString, saveOutString, saveInOutString;
+     sequence<long>   *saveReturnSequenceLong , *saveInSequenceLong , *saveOutSequenceLong , *saveInOutSequenceLong;
+     SupportObject  saveReturnSupportObject, saveInSupportObject, saveOutSupportObject, saveInOutSupportObject;
+     any  *saveReturnAny, *saveInAny, *saveOutAny, *saveInOutAny;
+  #endif
+
+      releaseorder:
+        longMethod,
+        stringMethod,
+        sequenceMethod,
+        objectMethod,
+        octetMethod,
+        arrayMethod,
+        anyMethod
+        ;
+
+
+      override :
+        somDefaultInit,
+        somDestruct
+        ;
+
+      dllname = "memman.dll";
+
+      passthru C_xh = "#include \"support.xh\"";
+      long tempA;
+
+  #ifdef __PRIVATE__
+  #endif /* __PRIVATE__ */
+    };
+#endif /* __SOMIDL__ */
+};
+
+#endif /* MemoryManagement_IDL */
+
+

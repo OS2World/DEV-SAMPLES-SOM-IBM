@@ -1,0 +1,168 @@
+#
+# This make file has settings for IBM VisualAge C++ version 3.x for OS/2
+# It is may be used with the nmake program.
+#
+
+# General settings
+MAKEFILE     = makefile.age
+SYS          = OS2
+CC           = icc
+CPPC         = icc
+SC           = sc
+LINKER       = ilink
+IMPLIB       = implib
+RM           = del
+OBJ          = obj
+CFLAGS       = $(DLL_CFLAGS)
+CPPFLAGS     = $(DLL_CPPFLAGS)
+SCFLAGS      = -S100000 -p
+TARGETS      = $(DLL_TARGET).$(DLL_EXT) $(EXE_TARGET).$(EXE_EXT) somdimpl
+CLEANFILES   = $(DLL_TARGET).$(DLL_LIBEXT) $(DLL_TARGET).$(DLL_DEF) $(DLL_INITMOD).* $(TARGETS)
+
+# EXE build settings
+EXE_CFLAGS   = -W3 -c -Ti+ -Q+ -Gd- -Gm+ -Gs+ -Sm -Ss+
+EXE_CPPFLAGS = -W3 -c -Ti+ -Q+ -Gd- -Gm+ -Gs+ -Sm
+EXE_LFLAGS   = /Debug /exepack /packd /packc /align:4 /stack:360000 /pm:vio /noe /noi /nol
+EXE_OBJS     =  client.obj
+EXE_SYSOBJS  =
+EXE_LIBS     = rental.lib somtk.lib os2386.lib
+EXE_TARGET   = client
+EXE_EXT      = exe
+EXE_IDLS     =
+EXE_CSRC     =
+EXE_CPPSRC   = client.cpp
+
+# DLL build settings
+DLL_INITMOD  = sinitmod
+DLL_CFLAGS   = -W3 -c -Ti+ -Q+ -Gd- -Gm+ -Gs+ -Ge- -Sm -Ss+
+DLL_CPPFLAGS = -W3 -c -Ti+ -Q+ -Gd- -Gm+ -Gs+ -Ge- -Sm
+DLL_LFLAGS   = /Debug /exepack /packd /packc /align:4 /stack:360000 /pm:vio /noe /noi /nol
+DLL_OBJS     = rental.obj rentalg.obj rentalf.obj sinitmod.obj
+DLL_SYSOBJS  =
+DLL_LIBS     = somtk.lib os2386.lib
+DLL_TARGET   = rental
+DLL_EXT      = dll
+DLL_LIBEXT   = lib
+DLL_DEF      = def
+DLL_IDLS     = rental.idl rentalg.idl rentalf.idl
+DLL_CSRC     =
+DLL_CPPSRC   = rental.cpp rentalg.cpp rentalf.cpp
+
+all: $(TARGETS)
+
+# DLL target
+$(DLL_TARGET).$(DLL_EXT): $(DLL_OBJS) $(DLL_TARGET).$(DLL_LIBEXT)
+	$(LINKER) $(DLL_LFLAGS) $(DLL_OBJS) $(DLL_SYSOBJS) $(DLL_LIBS) $(DLL_TARGET).$(DLL_DEF)
+
+# DLL "Import" library target
+$(DLL_TARGET).$(DLL_LIBEXT): $(DLL_TARGET).$(DLL_DEF)
+	$(IMPLIB) $(DLL_TARGET).$(DLL_LIBEXT) $(DLL_TARGET).$(DLL_DEF)
+
+# DLL exports file
+$(DLL_TARGET).$(DLL_DEF): $(DLL_IDLS)
+	$(SC) $(SCFLAGS) -s$(DLL_DEF) -mdll=$(DLL_TARGET) $(DLL_IDLS)
+
+# DLL SOMInitModule function
+$(DLL_INITMOD).$(OBJ): $(DLL_INITMOD).c
+	$(CC) $(DLL_CFLAGS) $*.c
+
+$(DLL_INITMOD).c: $(DLL_IDLS)
+	$(SC) $(SCFLAGS) -simod -mdll=$(DLL_TARGET) -mimod=$@ $(DLL_IDLS)
+
+# EXE target
+$(EXE_TARGET).$(EXE_EXT): $(EXE_OBJS)
+	$(LINKER) $(EXE_LFLAGS) $(EXE_OBJS) $(EXE_SYSOBJS) $(EXE_LIBS)
+
+# Build DSOM Implementation Repository
+somdimpl:
+ -regimpl -A -i RentalServer -p somossvr.exe -v somOS::Server -m on
+ -regimpl -a -i RentalServer -c GenericRentalFactory
+ -regimpl -a -i RentalServer -c MovieFactory
+ -regimpl -a -i RentalServer -c GameFactory
+ -regimpl -a -i RentalServer -c RentalItem
+ -regimpl -a -i RentalServer -c Movie
+ -regimpl -a -i RentalServer -c Game
+ -regimpl -a -i RentalServer -c RentObject
+ -regimpl -a -i RentalServer -c GenericCounter
+ -regimpl -a -i RentalServer -c CustomerAccount
+ -regimpl -a -i RentalServer -c RentalManager
+ -regimpl -a -i RentalServer -c RentalItemLog
+ -regimpl -a -i RentalServer -c CustomerLog
+ -regimpl -a -i RentalServer -c RentalLog
+	@echo somdimpl > somdimpl
+
+# Clean up files that can be re-built
+clean:  cleanfiles cleanimpl
+
+cleanfiles:
+	-del *.$(OBJ) >nul 2>&1
+	-del $(EXE_IDLS:.idl=.xh) $(DLL_IDLS:.idl=.xh) >nul 2>&1
+	-del $(EXE_IDLS:.idl=.xih) $(DLL_IDLS:.idl=.xih) >nul 2>&1
+	-del *.ir >nul 2>&1
+	-del $(CLEANFILES) >nul 2>&1
+
+cleanimpl:
+ -regimpl -D -i RentalServer
+
+
+# Suffix rules for building source files
+.SUFFIXES: .$(OBJ) .cpp .c .xih .xh .ih .h .idl
+
+.cpp.$(OBJ):
+	$(CPPC) $(CPPFLAGS) $<
+
+
+.c.$(OBJ):
+	$(CC) $(CFLAGS) $<
+
+
+.idl.cpp:
+	$(SC) $(SCFLAGS) -usir;xc $<
+
+
+.idl.c:
+	$(SC) $(SCFLAGS) -usir;c $<
+
+
+.idl.xih:
+	$(SC) $(SCFLAGS) -usir;xih $<
+
+
+.idl.xh:
+	$(SC) $(SCFLAGS) -usir;xh $<
+
+
+.idl.ih:
+	$(SC) $(SCFLAGS) -usir;ih $<
+
+
+.idl.h:
+	$(SC) $(SCFLAGS) -usir;h $<
+
+
+# Dependencies follow
+client.obj: rental.xh rentalf.xh rentalf.xh rentalg.xh client.cpp
+	$(CPPC) $(EXE_CPPFLAGS) client.cpp
+
+rental.ih: rental.idl
+rental.h: rental.idl
+
+rentalg.ih: rentalg.idl
+rentalg.h: rentalg.idl
+
+rentalf.ih: rentalf.idl
+rentalf.h: rentalf.idl
+
+rental.obj: rental.cpp rental.xih rentalf.xh rental.xh rentalg.xh
+	$(CPPC) $(DLL_CPPFLAGS) rental.cpp
+
+rentalg.obj: rentalg.cpp rentalg.xih rentalg.xh rental.xh rentalf.xh
+	$(CPPC) $(DLL_CPPFLAGS) rentalg.cpp
+
+rentalf.obj: rentalf.cpp rentalf.xih rentalf.xh rental.xh
+	$(CPPC) $(DLL_CPPFLAGS) rentalf.cpp
+
+
+
+
+

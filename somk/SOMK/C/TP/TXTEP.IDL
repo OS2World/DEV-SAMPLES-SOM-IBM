@@ -1,0 +1,118 @@
+//
+//   COMPONENT_NAME: somx
+//
+//   ORIGINS: 27
+//
+//
+//    25H7912  (C)  COPYRIGHT International Business Machines Corp. 1992,1996,1996  
+//   All Rights Reserved
+//   Licensed Materials - Property of IBM
+//   US Government Users Restricted Rights - Use, duplication or
+//   disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+//
+/* @(#) somx/txtep.idl 2.6 12/26/95 17:57:19 [1/24/96 17:31:20] */
+
+/*
+ *
+ * DISCLAIMER OF WARRANTIES.
+ * The following [enclosed] code is sample code created by IBM
+ * Corporation. This sample code is not part of any standard or IBM
+ * product and is provided to you solely for the purpose of assisting
+ * you in the development of your applications.  The code is provided
+ * "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+ * NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+ * THIS CODE.  IBM shall not be liable for any damages arising out of
+ * your use of the sample code, even if they have been advised of the
+ * possibility of such damages.
+ *
+ * DISTRIBUTION.
+ * This sample code can be freely distributed, copied, altered, and
+ * incorporated into other software, provided that it bears the above
+ * Copyright notice and DISCLAIMER intact.
+ */
+
+
+//  This class is adapted from the book
+//    Class Construction in C and C++, Object Oriented Fundamentals
+//    by Roger Sessions, Copyright (c) 1992 Prentice Hall.
+//  Reprinted with permission.
+
+#ifndef txtep_idl
+#define txtep_idl
+
+#include "ep.idl"
+
+interface textLine;
+interface columnBlock;
+
+interface txtEnvProcessor : envProcessor
+{
+  void tpProcessWord();
+  // Default word processor: Add it to the current line, if
+  // space is available, otherwise create a new line.
+
+  void tpProcessBlanks();
+  // Default blank processor: Add to current line, if
+  // space is available, otherwise discard (ie don't
+  // use in a new line).
+
+  void tpProcessLineBreak();
+  // Default line break processor: Treat line breaks as
+  // blanks (ie an input line break does not cause a line
+  // break in the output file).
+
+  void tpProcessFullLine();
+  // Default full line processor: Add full input line to
+  // columnBlock and start a new line.
+
+  void tpProcessFullPage();
+  // Default full page processor: Print the page and start
+  // another.
+
+  void tpProcessNewLine();
+  // Default new line processor: Handles a new output line.
+  // Default is indent line 2 characters.
+
+  void tpProcessNewParagraph();
+  // Default new paragraph processor: Breaks the output line.
+  // Starts a new output line.
+
+  attribute textLine currentLine;
+  // The current line.
+
+#ifdef __SOMIDL__
+  implementation {
+
+    releaseorder: tpProcessWord,tpProcessBlanks,tpProcessLineBreak, 
+                  tpProcessFullLine,tpProcessFullPage,tpProcessNewLine, 
+                  tpProcessNewParagraph,
+		  _get_currentLine,_set_currentLine;
+
+    //# Class Modifiers
+    callstyle = oidl;
+    filestem = txtep;
+
+    //# Internal Instance Variables
+    TPWord thisWord;              
+    columnBlock thisCB;           
+
+    //# Attribute Modifiers
+    currentLine: noget;
+    
+    //# Method Modifiers
+    epProcessEnvironment: override;
+    epShutdownEnvironment: override;
+    epInitializeEnvironment: override;
+    epPrepareForNewEnvironment: override;
+    _get_paragraphIndentation: override;
+    _get_lineIndentation: override;
+    epInit1: override;
+    somInit: override;
+    somUninit: override;
+
+  };
+#endif /* __SOMIDL__ */
+};
+
+#endif  /* txtep_idl */

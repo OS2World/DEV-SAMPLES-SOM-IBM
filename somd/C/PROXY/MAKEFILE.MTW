@@ -1,0 +1,176 @@
+#
+# This make file has settings for MetaWare High C/C++ version 3.31 for OS/2
+# It is may be used with the nmake program.
+#
+
+#
+#   COMPONENT_NAME: somx
+#
+#   ORIGINS: 27
+#
+#
+#    25H7912  (C)  COPYRIGHT International Business Machines Corp. 1992,1996,1996  
+#   All Rights Reserved
+#   Licensed Materials - Property of IBM
+#   US Government Users Restricted Rights - Use, duplication or
+#   disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+#
+#   @(#) 1.9 src/somples.os2/somd/c/proxy/makefile.mtw, somx.somd, som2.5, s259604a 12/27/95 14:11:21 [1/24/96 18:00:18]
+
+
+# DISCLAIMER OF WARRANTIES.
+# The following [enclosed] code is sample code created by IBM
+# Corporation. This sample code is not part of any standard or IBM
+# product and is provided to you solely for the purpose of assisting
+# you in the development of your applications.  The code is provided
+# "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+# NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+# THIS CODE.  IBM shall not be liable for any damages arising out of
+# your use of the sample code, even if they have been advised of the
+# possibility of such damages.
+#
+# DISTRIBUTION.
+# This sample code can be freely distributed, copied, altered, and
+# incorporated into other software, provided that it bears the above
+# Copyright notice and DISCLAIMER intact.
+
+#  Makefile for DSOM "proxy" samples (os2)
+
+# General settings
+MAKEFILE     = makefile.mtw
+SYS          = OS2
+CC           = hc
+CPPC         = hc
+SC           = sc
+LINKER       = link386
+IMPLIB       = implib
+RM           = del
+OBJ          = obj
+CFLAGS       = $(DLL_CFLAGS)
+CPPFLAGS     = $(DLL_CPPFLAGS)
+SCFLAGS      =
+TARGETS      = $(DLL_TARGET).$(DLL_EXT) $(EXE_TARGET).$(EXE_EXT)
+CLEANFILES   = $(DLL_TARGET).$(DLL_LIBEXT) $(DLL_TARGET).$(DLL_DEF) $(DLL_INITMOD).* $(TARGETS)
+
+# EXE build settings
+EXE_CFLAGS   = -w0 -c -Hthread -I$(SOMBASE)\include
+EXE_CPPFLAGS = -w0 -c -Hthread -I$(SOMBASE)\include
+EXE_LFLAGS   = /exepack /packd /packc /align:4 /stack:360000 /pm:vio /noe /noi /nol
+EXE_OBJS     = tstproxy.obj
+EXE_SYSOBJS  = startup.obj
+EXE_LIBS     = objs hct hcct os2386 somtk
+EXE_TARGET   = tstproxy
+EXE_EXT      = exe
+EXE_IDLS     =
+EXE_CSRC     = tstproxy.c
+EXE_CPPSRC   =
+
+# DLL build settings
+DLL_INITMOD  = sinitmod
+DLL_CFLAGS   = -w0 -c -Hthread -Hdll -I$(SOMBASE)\include
+DLL_CPPFLAGS = -w0 -c -Hthread -Hdll -I$(SOMBASE)\include
+DLL_LFLAGS   = /exepack /packd /packc /align:4 /stack:360000 /pm:vio /noe /noi /nol
+DLL_OBJS     = BAR.obj BARPROXY.obj  sinitmod.obj
+DLL_SYSOBJS  = startupd.obj
+DLL_LIBS     = hct hcct os2386 somtk
+DLL_TARGET   = objs
+DLL_EXT      = dll
+DLL_LIBEXT   = lib
+DLL_DEF      = def
+DLL_IDLS     = BAR.IDL BARPROXY.IDL
+DLL_CSRC     = BAR.c BARPROXY.c
+DLL_CPPSRC   =
+
+all: $(SOMBASE)\include\somcorba.bld $(TARGETS) somdimpl
+
+# DLL target
+$(DLL_TARGET).$(DLL_EXT): $(DLL_OBJS) $(DLL_TARGET).$(DLL_LIBEXT)
+        $(LINKER) $(DLL_LFLAGS) $(DLL_OBJS) $(DLL_SYSOBJS),$@,NUL,$(DLL_LIBS),$(DLL_TARGET).$(DLL_DEF)
+        sc $(SCFLAGS) -sir -u -mnolock *.idl
+
+# DLL "Import" library target
+$(DLL_TARGET).$(DLL_LIBEXT): $(DLL_TARGET).$(DLL_DEF)
+        $(IMPLIB) $(DLL_TARGET).$(DLL_LIBEXT) $(DLL_TARGET).$(DLL_DEF)
+
+# DLL exports file
+$(DLL_TARGET).$(DLL_DEF): $(DLL_IDLS)
+        $(SC) -s$(DLL_DEF) -mdll=$(DLL_TARGET) $(DLL_IDLS)
+
+# DLL SOMInitModule function
+$(DLL_INITMOD).$(OBJ): $(DLL_INITMOD).c
+
+$(DLL_INITMOD).c: $(DLL_IDLS)
+        $(SC) -simod -mdll=$(DLL_TARGET) -mimod=$@ $(DLL_IDLS)
+
+# EXE target
+$(EXE_TARGET).$(EXE_EXT): $(EXE_OBJS)
+        $(LINKER) $(EXE_LFLAGS) $(EXE_OBJS) $(EXE_SYSOBJS),$@,NUL,$(EXE_LIBS);
+
+# Clean up files that can be re-built
+clean: cleanup cleanimpl
+
+cleanup:
+        -del *.$(OBJ) *.ih *.h *.xih *.xh *.ir $(CLEANFILES) fileref >nul 2>&1
+
+# Cleanup the DSOM Implementation Repository.
+cleanimpl:
+        -regimpl -D -i barServer1
+        -erase somdimpl
+
+$(SOMBASE)\include\somcorba.bld:
+    @echo This sample requires the CORBA-style C bindings
+    @echo created using the somcorba command.
+    @exit 1
+
+# Build the DSOM Implementation Repository.
+somdimpl:
+    -regimpl -A -i barServer1 -p somdsvr.exe
+    -regimpl -a -i barServer1 -c Bar
+    -regimpl -L -i barServer1
+    @echo "" > somdimpl
+
+# Suffix rules for building source files
+.SUFFIXES: .$(OBJ) .cpp .c .xih .xh .ih .h .idl
+
+.cpp.$(OBJ):
+        $(CPPC) $(CPPFLAGS) $<
+
+
+.c.$(OBJ):
+        $(CC) $(CFLAGS) $<
+
+
+.idl.xih:
+        $(SC) $(SCFLAGS) -sxih $<
+
+
+.idl.xh:
+        $(SC) $(SCFLAGS) -sxh $<
+
+
+.idl.ih:
+        $(SC) $(SCFLAGS) -sih $<
+
+
+.idl.h:
+        $(SC) $(SCFLAGS) -sh $<
+
+
+# Dependencies follow
+tstproxy.obj: tstproxy.c bar.h
+        $(CC) $(EXE_CFLAGS) tstproxy.c
+
+BAR.ih: BAR.IDL
+BAR.h: BAR.IDL
+
+BARPROXY.ih: BARPROXY.IDL bar.idl
+BARPROXY.h: BARPROXY.IDL bar.idl
+
+BAR.obj: BAR.c bar.ih BAR.h
+
+BARPROXY.obj: BARPROXY.c barproxy.ih BARPROXY.h bar.h
+
+
+
+

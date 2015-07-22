@@ -1,0 +1,233 @@
+/*
+ *
+ *  25H7912  (C)  COPYRIGHT International Business Machines Corp. 1992,1996,1996
+ *  All Rights Reserved
+ *  Licensed Materials - Property of IBM
+ *  US Government Users Restricted Rights - Use, duplication or
+ *  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+ *
+ *
+ *
+ *  DISCLAIMER OF WARRANTIES.
+ *  The following [enclosed] code is sample code created by IBM
+ *  Corporation. This sample code is not part of any standard or IBM
+ *  product and is provided to you solely for the purpose of assisting
+ *  you in the development of your applications.  The code is provided
+ *  "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+ *  NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+ *  THIS CODE.  IBM shall not be liable for any damages arising out of
+ *  your use of the sample code, even if they have been advised of the
+ *  possibility of such damages.
+ *
+ *  DISTRIBUTION.
+ *  This sample code can be freely distributed, copied, altered, and
+ *  incorporated into other software, provided that it bears the above
+ *  Copyright notice and DISCLAIMER intact.
+ *
+ */
+
+/*******************************************************************
+   README for SOMObjects 3.0 Services Externalization service sample.
+
+   This file establishes a context from which the sample implement-
+ation should be meaningful.
+
+   Steps to build and run the samples.
+
+   1. som_cfg -i                    Configure DSOM
+
+   2. xmake -f makefile.xxx all     Configure for and build the
+                                    sample executables for xxx compiler
+
+   3. Terminate clientSvrThread process
+
+   4. company                       run company.exe
+
+   5. client1                       run client1.exe
+
+   6. client2                       run client2.exe
+
+NOTES TO THE EXTERNALIZATION SAMPLE USER
+       The sample assumes that DSOM has been correctly configured.
+
+       Exception handling is done in only the utility functions
+       supplied with this sample.  Exception handling in the
+       actual sample source was minimized to increase readabliity.
+*******************************************************************/
+
+Sample summary:
+---------------
+
+   The Externalization Service can be used to increase the perform-
+ance of processing distributed objects.  Operating on remote objects
+that contain large amounts of data could involve large amounts of
+communications overhead.  Class implementors can use the Externaliz-
+ation Service to minimize this communication overhead.
+
+   A streamable object is an instance whose class (myStreamable)
+inherits from class somStream::Streamable. The implementor of
+myStreamable overrides the methods internalize_from_stream() and
+externalize_to_stream() to specify which attributes of an instance
+of mystreamable are to be streamed and which are not.
+
+   Other objects (generically called streams) operate on streamable
+objects.  Streams have an method called externalize() and another
+called internalize(). A stream's externalize() method externalizes a
+streamable object's state by invoking the externalize_to_stream()
+method of the streamable object.  The output of the
+externalize_to_stream() method is placed in a buffer.  This buffer
+is an attribute of a streamIO which in turn is an attribute
+of a stream. A stream's internalize() method creates an object and
+initializes it via a call to the streamable object's
+internalize_from_stream() method.  The state of the created object is
+specified by the contents of the streamIO buffer of the stream.
+
+   Refer to the Externalization Chapter of the Object Services User's
+Guide for more information on Externalization interfaces and their use.
+
+   The overall flow of this Externalization Sample is as follows:
+   1. Create somStream::Streamable objects.
+   2. Create streams.
+   3. Invoke the externalize() method of a stream to stream out object
+      state.
+   4. Invoke the internalize() method of a stream to stream in object
+      state.
+   5. Process the internalized object.
+
+Sample Constraints:
+-------------------
+1.  There are currently two main stream types.  This sample is written
+    using somExternalization::OSStream.
+    A. somExternalization::Stream - always writes object state values
+           to the streamIO buffer whether or not the object has a
+           persistent reference or not. (always deep copy)
+
+    B. somExternalization::OSStream - writes a stringified reference
+           to the streamIO buffer if the object has a persistent reference
+           and is being externalized because the object in which it is
+           contained was externalized. (shallow copy)
+
+2.  A stream's internalize method creates an object based on the state
+    represented in the stream's streamIO buffer.  The internalize method
+    has a factory finder as a parameter.  This sample passes a factory
+    finder containing a location object.  This factory finder determines
+    the server on which the internalize method  creates the output object.
+    Refer to the Life Cycle Chapter of the Object Services Users Guide
+    for more information about factory finders.
+
+
+Sample Scenario:
+----------------
+   Very Big Co. is a large sales firm.  The data collection arm of VB
+represents the company as object VB.  Object VB contains one
+object for each department in its sales fleet.  Each department
+object including dept45 contains references to two other objects:
+   companySalesCounts
+   deptSalesValues
+Both objects (companySalesCounts, deptSalesValues) that are embedded
+in the object dept45 contain huge amounts of data.  Object
+companySalesCounts contains the counts of all sales for all of BK's
+departments worldwide.  Object deptSalesValues contains the amounts
+for each sale made by the Department 45.
+
+   Given this, Department 45 needs statistical information concerning
+its sales. To do this, the department object (dept45) is externalized
+into a stream on the server where the department object resides.
+That stream is then used to internalize the dept45 object's state into
+an object that resides in a server thread of a local process so that
+its sophisticated statistical packages can be efficiently used.
+
+   Department 45 only needs one datum from the embedded object
+companySalesCounts (the number of items department 45 has sold).
+This value indicates the number of values stored in the other
+embedded object, deptSalesValues.  It would not be efficient
+to have all the values in the companySalesCounts to be internalized
+to the local object since only one value is needed.
+
+   Department 45 needs all of the values contained in the embedded
+object deptsalesValues.  Worse than that, each value is accessed
+more than once.  It would be much more efficient to have all these
+values transmitted when the dept45 object is internalized into the
+local object so that local processing could be accomplished with
+local data accesses.
+
+   Copying remote objects like dept45 have components we want copied
+deeply and other components we want copied in a shallow manner.  The
+Externalization Service supports both deep and shallow copies of
+embedded objects (components).  The type of copy performed is determined
+by the inheritence structure of the embedded streamable object.
+
+   All streamable objects must be instances of the class
+somStream::Streamable.  These objects do not have persistent refer-
+ences.  If an object that does not have a persistent reference is
+externalized, the values in its state are written into the streamIO
+buffer of the stream (deep copy).  The embedded object deptsalesValues
+should be an instance of a class of this type.
+
+   A streamable object that is an instance of a class that derives
+from both somStream::Streamable and somOS::ServiceBasePRef has
+a persistent reference.  StreamIO buffers of a stream receive these
+persistent references instead of state values when embedded
+streamable objects that have persistent references are externalized.
+Said another way, embedded objects that have persistent references
+are copied in a shallow manner. The embedded object companySalesCounts
+should be a instance of a class of this type.
+
+   Only embedded objects that have persistent references written to
+the streamIO buffer of the stream.  Please note that non-embedded
+objects have their state values written to the streamIO buffer whether
+they have persistent references or not.
+
+Making the sample
+-----------------
+BEFORE making the sample, the DSOM daemon "somdd" must be running (either
+in the background or in a separate OS/2 command window) and the Name Service
+must have been configured using som_cfg, as described in the README file in
+%SOMBASE%\samples\somd.  This is because the makefile for the sample
+registers the servers and classes in the Name Service.
+
+Depending upon which compiler you are using you will want to use different commands:
+  C-Set++: nmake
+  Visual Age C++: nmake -f makefile.age all
+  Borland: make -f makefile.bor all  (NOT supported at this time)
+  Watcom: wmake -f makefile.wat all  (NOT supported at this time)
+  Metaware: nmake -f makefile.mtw all  (NOT supported at this time)
+
+Cleaning up the sample:
+-----------------------
+ BEFORE cleaning up the sample, the DSOM daemon "somdd" must be running (either
+in the background or in a separate OS/2 command window).  This is because the
+makefile for the sample deregisters the servers and classes in the Name Service.
+
+ Terminate all the instances of somossvr and Namingserver.
+This is because the servers will have the som.ir and dlls locked so they can't
+be erased.  To clean up the sample, enter you make command with the clean option.
+This will delete all non-source files and deregister itself from the Name Service
+and Implementation Repository.
+
+The daemon "somdd" will restart the naming server to deregister the sample class.
+
+Files:
+------
+  company.cpp: contains the main code for the company.exe.
+  client1.cpp: contains the main code for the client1.exe.
+  client2.cpp: contains the main code for the client2.exe.
+
+  samobj.idl; idl for the samobj object
+  samobj.cpp: C++ methods for the samobj object
+
+  util.cpp: C++ utility methods
+  util.hpp: header file for the utility object
+
+  readme.ext:  This file
+
+  makefile    : Makefile for IBM C-Set++ compiler.
+  makefile.bor: Makefile for Borland C++ compiler.
+  makefile.mtw: Makefile for MetaWare C++ compiler.
+  makefile.wat: Makefile for Watcom C++ compiler.
+  makefile.age: makefile for IBM Visual Age C++ compiler.
+
+
+
+

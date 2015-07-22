@@ -1,0 +1,85 @@
+//
+//   COMPONENT_NAME: somx
+//
+//   ORIGINS: 27
+//
+//
+//    25H7912  (C)  COPYRIGHT International Business Machines Corp. 1992,1996,1996  
+//   All Rights Reserved
+//   Licensed Materials - Property of IBM
+//   US Government Users Restricted Rights - Use, duplication or
+//   disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+//
+/*
+ *    @(#) 1.7 src/somples.os2/somd/cpp/event/cell.idl, somx.somd, som2.5, s259604a 12/26/95 20:29:59 [1/24/96 17:50:56]
+ */
+
+/*
+ *
+ * DISCLAIMER OF WARRANTIES.
+ * The following [enclosed] code is sample code created by IBM
+ * Corporation. This sample code is not part of any standard or IBM
+ * product and is provided to you solely for the purpose of assisting
+ * you in the development of your applications.  The code is provided
+ * "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+ * NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+ * THIS CODE.  IBM shall not be liable for any damages arising out of
+ * your use of the sample code, even if they have been advised of the
+ * possibility of such damages.
+ *
+ * DISTRIBUTION.
+ * This sample code can be freely distributed, copied, altered, and
+ * incorporated into other software, provided that it bears the above
+ * Copyright notice and DISCLAIMER intact.
+ */
+
+// This interface defines the function needed to update the value of a cell
+// in a spread sheet
+
+#ifndef cell_idl
+#define cell_idl
+
+#include <somobj.idl>
+#include <eventcom.idl>
+
+interface Cell: SOMObject
+{
+    attribute  long  val;
+    void notifyEventCh();
+    void setConsumerIf(in EventComm::Consumer consumer_if);
+
+    #ifdef __SOMIDL__
+    implementation
+    {
+      releaseorder: _set_val, _get_val, notifyEventCh, setConsumerIf;
+
+      //# Internal Instance Variables
+      EventComm::Consumer cons_if;
+
+      //# Class Modifiers
+      callstyle = idl;
+      majorversion = 1;  minorversion = 1;
+      dllname="eventc.dll";
+
+      //# Attribute Modifiers
+      val: noset;
+
+      memory_management = corba;
+
+      _get_val: object_owns_result;
+
+      passthru C_h_after =  ""
+      "#include <eventcom.ih>"
+      "";
+
+      passthru C_xh_after =  ""
+      "#include <eventcom.xih>"
+      "";
+    };
+    #endif /* __SOMIDL__  */
+
+}; //interface Cell
+
+#endif  /* cell_idl  */
+

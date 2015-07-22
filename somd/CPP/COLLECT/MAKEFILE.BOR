@@ -1,0 +1,213 @@
+#
+# This make file has settings for Borland C++ version 2.0 for OS/2
+# It is may be used with the make program.
+#
+
+#
+#   COMPONENT_NAME: somx
+#
+#   ORIGINS: 27
+#
+#
+#    25H7912  (C)  COPYRIGHT International Business Machines Corp. 1992,1996,1996  
+#   All Rights Reserved
+#   Licensed Materials - Property of IBM
+#   US Government Users Restricted Rights - Use, duplication or
+#   disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+#
+#   @(#) 1.6 src/somples.os2/somd/cpp/collect/makefile.bor, somx.somd, som2.5, s259604a 12/27/95 14:11:47 [1/24/96 17:52:02]
+
+
+# DISCLAIMER OF WARRANTIES.
+# The following [enclosed] code is sample code created by IBM
+# Corporation. This sample code is not part of any standard or IBM
+# product and is provided to you solely for the purpose of assisting
+# you in the development of your applications.  The code is provided
+# "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+# NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+# THIS CODE.  IBM shall not be liable for any damages arising out of
+# your use of the sample code, even if they have been advised of the
+# possibility of such damages.
+#
+# DISTRIBUTION.
+# This sample code can be freely distributed, copied, altered, and
+# incorporated into other software, provided that it bears the above
+# Copyright notice and DISCLAIMER intact.
+
+#  Makefile for DSOM "collect" samples (os2)
+
+# General settings
+MAKEFILE     = makefile.bor
+SYS          = OS2
+CC           = bcc
+CPPC         = bcc
+SC           = sc
+LINKER       = tlink
+IMPLIB       = implib
+RM           = del
+OBJ          = obj
+CFLAGS       = $(DLL_CFLAGS)
+CPPFLAGS     = $(DLL_CPPFLAGS)
+SCFLAGS      =
+TARGETS      = $(DLL_TARGET).$(DLL_EXT) $(EXE_TARGET).$(EXE_EXT) server.exe
+CLEANFILES   = $(DLL_TARGET).$(DLL_LIBEXT) $(DLL_TARGET).$(DLL_DEF) $(DLL_INITMOD).* $(TARGETS)
+
+# EXE build settings
+EXE_CFLAGS   = -c -w -sm -I.;$(SOMBASE)\include
+EXE_CPPFLAGS = -c -w -sm -I.;$(SOMBASE)\include
+EXE_LFLAGS   = /ap /c /x /L$(SOMBASE)\lib;$(MAKEDIR)\..\lib /Toe
+EXE_OBJS     =  client.obj
+EXE_SYSOBJS  = c02.obj
+EXE_LIBS     = bank c2mt os2 somtk
+EXE_TARGET   = client
+EXE_EXT      = exe
+EXE_IDLS     =
+EXE_CSRC     =
+EXE_CPPSRC   = client.cpp
+
+# DLL build settings
+DLL_INITMOD  = sinitmod
+DLL_CFLAGS   = -c -w -sd -sm -I.;$(SOMBASE)\include
+DLL_CPPFLAGS = -c -w -sd -sm -I.;$(SOMBASE)\include
+DLL_LFLAGS   = /ap /c /x /w-stk /L$(SOMBASE)\lib;$(MAKEDIR)\..\lib /Tod
+DLL_OBJS     =  ACCT.obj BANK.obj CHECK.obj MF.obj SAVE.obj TRANSACT.obj sinitmod.obj
+DLL_SYSOBJS  = c02d.obj
+DLL_LIBS     = c2mt os2 somtk
+DLL_TARGET   = bank
+DLL_EXT      = dll
+DLL_LIBEXT   = lib
+DLL_DEF      = def
+DLL_IDLS     = ACCT.IDL BANK.IDL CHECK.IDL MF.IDL SAVE.IDL TRANSACT.IDL
+DLL_CSRC     =
+DLL_CPPSRC   = ACCT.cpp BANK.cpp CHECK.cpp MF.cpp SAVE.cpp TRANSACT.cpp
+
+all: $(SOMBASE)\include\somxh.bld $(TARGETS) somdimpl
+
+# DLL target
+$(DLL_TARGET).$(DLL_EXT): $(DLL_OBJS) $(DLL_TARGET).$(DLL_LIBEXT)
+        scobj $(DLL_OBJS)
+        $(LINKER) $(DLL_LFLAGS) $(DLL_SYSOBJS) $(DLL_OBJS),$@,NUL,$(DLL_LIBS),$(DLL_TARGET).$(DLL_DEF)
+        sc $(SCFLAGS) -sir -u -mnolock *.idl
+
+# DLL "Import" library target
+$(DLL_TARGET).$(DLL_LIBEXT): $(DLL_TARGET).$(DLL_DEF)
+        $(IMPLIB) $(DLL_TARGET).$(DLL_LIBEXT) $(DLL_TARGET).$(DLL_DEF)
+
+# DLL exports file
+$(DLL_TARGET).$(DLL_DEF): $(DLL_IDLS)
+        $(SC) -s$(DLL_DEF) -mdll=$(DLL_TARGET) $(DLL_IDLS)
+
+# DLL SOMInitModule function
+$(DLL_INITMOD).$(OBJ): $(DLL_INITMOD).c
+
+$(DLL_INITMOD).c: $(DLL_IDLS)
+        $(SC) -simod -mdll=$(DLL_TARGET) -mimod=$@ $(DLL_IDLS)
+
+# EXE target
+$(EXE_TARGET).$(EXE_EXT): $(EXE_OBJS) bank.lib
+        scobj $(EXE_OBJS)
+        $(LINKER) $(EXE_LFLAGS) $(EXE_SYSOBJS) $(EXE_OBJS),$@,NUL,$(EXE_LIBS);
+
+server.$(EXE_EXT): server.obj bank.lib
+        scobj server.obj
+        $(LINKER) $(EXE_LFLAGS) $(EXE_SYSOBJS) server.obj,$@,NUL,$(EXE_LIBS);
+
+# Clean up files that can be re-built
+clean: cleanup cleanimpl
+
+cleanup:
+        -del *.$(OBJ) *.ih *.h *.xih *.xh *.ir $(CLEANFILES) >nul 2>&1
+
+# Cleanup the DSOM Implementation Repository.
+cleanimpl:
+        -regimpl -D -i BankServer
+        -erase somdimpl
+
+$(SOMBASE)\include\somxh.bld:
+        @echo This sample requires that the SOM toolkit C++ bindings have been built
+        @echo with the somxh command.
+        @exit 1
+
+# Build the DSOM Implementation Repository.
+somdimpl:
+    -regimpl -A -i BankServer -p server.exe
+    -regimpl -a -i BankServer -c trans_info -c Account -c savingsAcc -c checkingAcc -c mutualfundsAcc -c Bank
+    -regimpl -L -i BankServer
+    -regimpl -l -i BankServer
+    @echo "" > somdimpl
+
+# Suffix rules for building source files
+.SUFFIXES: .$(OBJ) .cpp .c .xih .xh .ih .h .idl
+
+.cpp.$(OBJ):
+        $(CPPC) $(CPPFLAGS) $<
+
+
+.c.$(OBJ):
+        $(CC) $(CFLAGS) $<
+
+
+.idl.xih:
+        $(SC) $(SCFLAGS) -sxih $<
+
+
+.idl.xh:
+        $(SC) $(SCFLAGS) -sxh $<
+
+
+.idl.ih:
+        $(SC) $(SCFLAGS) -sih $<
+
+
+.idl.h:
+        $(SC) $(SCFLAGS) -sh $<
+
+
+# Dependencies follow
+client.obj: client.cpp bank.xh transact.xh save.xh acct.xh check.xh mf.xh
+        $(CPPC) $(EXE_CPPFLAGS) client.cpp
+
+server.obj: server.cpp bank.xh transact.xh save.xh acct.xh check.xh mf.xh
+        $(CPPC) $(EXE_CPPFLAGS) server.cpp
+        scobj -sSOMD_ImplDefObject server.obj
+
+ACCT.ih: ACCT.IDL transact.idl
+ACCT.h: ACCT.IDL transact.idl
+
+BANK.ih: BANK.IDL
+BANK.h: BANK.IDL
+
+CHECK.ih: CHECK.IDL acct.idl transact.idl
+CHECK.h: CHECK.IDL acct.idl transact.idl
+
+MF.ih: MF.IDL acct.idl transact.idl
+MF.h: MF.IDL acct.idl transact.idl
+
+SAVE.ih: SAVE.IDL acct.idl transact.idl
+SAVE.h: SAVE.IDL acct.idl transact.idl
+
+TRANSACT.ih: TRANSACT.IDL
+TRANSACT.h: TRANSACT.IDL
+
+ACCT.obj: ACCT.cpp transact.xh check.xh acct.xh save.xh mf.xh acct.xih
+        $(CPPC) $(DLL_CPPFLAGS) ACCT.cpp
+
+BANK.obj: BANK.cpp transact.xh save.xh acct.xh check.xh mf.xh bank.xih BANK.xh acct.xih
+        $(CPPC) $(DLL_CPPFLAGS) BANK.cpp
+
+CHECK.obj: CHECK.cpp transact.xh acct.xh check.xih CHECK.xh
+        $(CPPC) $(DLL_CPPFLAGS) CHECK.cpp
+
+MF.obj: MF.cpp transact.xh acct.xh mf.xih MF.xh
+        $(CPPC) $(DLL_CPPFLAGS) MF.cpp
+
+SAVE.obj: SAVE.cpp transact.xh acct.xh save.xih SAVE.xh
+        $(CPPC) $(DLL_CPPFLAGS) SAVE.cpp
+
+TRANSACT.obj: TRANSACT.cpp transact.xih TRANSACT.xh
+        $(CPPC) $(DLL_CPPFLAGS) TRANSACT.cpp
+
+
+
+

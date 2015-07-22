@@ -1,0 +1,101 @@
+#
+#   COMPONENT_NAME: somx
+#
+#   ORIGINS: 27
+#
+#
+#    25H7912  (C)  COPYRIGHT International Business Machines Corp. 1992,1996,1996  
+#   All Rights Reserved
+#   Licensed Materials - Property of IBM
+#   US Government Users Restricted Rights - Use, duplication or
+#   disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+#
+/*
+ *  @(#) 2.9 src/somples.os2/somd/cpp/dii/readme, somx.somd, som2.5, s259604a 12/26/95 17:47:48 [1/24/96 17:31:10]
+ */
+
+/*
+ *
+ * DISCLAIMER OF WARRANTIES.
+ * The following [enclosed] code is sample code created by IBM
+ * Corporation. This sample code is not part of any standard or IBM
+ * product and is provided to you solely for the purpose of assisting
+ * you in the development of your applications.  The code is provided
+ * "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+ * NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+ * THIS CODE.  IBM shall not be liable for any damages arising out of
+ * your use of the sample code, even if they have been advised of the
+ * possibility of such damages.
+ *
+ * DISTRIBUTION.
+ * This sample code can be freely distributed, copied, altered, and
+ * incorporated into other software, provided that it bears the above
+ * Copyright notice and DISCLAIMER intact.
+ */
+
+NOTE:  Please review the README file in %SOMBASE%\samples\somd for general
+       information on setting up and running DSOM samples.  This README
+       assumes that information.
+
+Sample summary
+--------------
+The directory contains a sample client program which uses the Dynamic Invocation
+Interface (DII) to invoke a method on a remote object.  The sample creates
+a remote object, creates an NVList object for the argument list, creates a
+request object for the operation, invokes the request on the object, prints
+the results and destroys the remote object.
+
+Making the sample
+-----------------
+BEFORE making the sample, the DSOM daemon "somdd" must be running (either
+in the background or in a separate OS/2 command window) and the Name Service
+must have been configured using som_cfg, as described in the README file in
+%SOMBASE%\samples\somd.  This is because the makefile for the sample
+registers the servers and classes in the Name Service.
+
+The makefile in this directory will build a client executable and a
+dynamically loadable library.  They are:
+
+ - diitest.exe (the DSOM client application)
+
+ - foo.dll (the library loaded by the server)
+
+Entering "nmake" will not only build the above but it will also
+build the interface and implementation repositories that the
+servers will utilize.
+
+Running the sample
+------------------
+Before running the sample, remember to start the DSOM daemon "somdd" in this
+directory. If the daemon is currently running you must first kill it and
+restart it in this directory.  This is because the daemon "somdd" will
+start the sample server "somdsvr" which will attempt to load the foo dll.
+The foo dll needs to reside in the LIBPATH of the sample server.
+
+To start the daemon, enter:
+
+   start /c /f somdd
+
+Once the daemon is started, entering "diitest" from the command line will
+run the sample.  The server will be started automatically and the results
+will be displayed to standard output.
+
+You may also start the server yourself by entering "somdsvr -a diiServer2"
+from the command line.  Note that "diiServer2" is the server alias name
+specified in the makefile when calling the Implementation Repository 
+registration utility, regimpl.
+
+Cleaning up the sample
+----------------------
+BEFORE cleaning up the sample, the DSOM daemon "somdd" must be running (either
+in the background or in a separate OS/2 command window).  This is because the 
+makefile for the sample deregisters the servers and classes in the Name Service.
+
+Terminate all the instances of somdsvr.  This is because the servers will have
+the som.ir and dlls locked so they can't be erased.  To clean up the sample,
+enter "nmake clean".  This will delete all non-source files and deregister itself
+from the Name Service and Implementation Repository.
+
+The daemon "somdd" will restart the naming server to deregister the sample.
+

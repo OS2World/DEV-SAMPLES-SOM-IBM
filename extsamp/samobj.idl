@@ -1,0 +1,305 @@
+/*
+ *
+ *  25H7912  (C)  COPYRIGHT International Business Machines Corp. 1992,1996,1996
+ *  All Rights Reserved
+ *  Licensed Materials - Property of IBM
+ *  US Government Users Restricted Rights - Use, duplication or
+ *  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+ *
+ *
+ *
+ *  DISCLAIMER OF WARRANTIES.
+ *  The following [enclosed] code is sample code created by IBM
+ *  Corporation. This sample code is not part of any standard or IBM
+ *  product and is provided to you solely for the purpose of assisting
+ *  you in the development of your applications.  The code is provided
+ *  "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+ *  NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+ *  THIS CODE.  IBM shall not be liable for any damages arising out of
+ *  your use of the sample code, even if they have been advised of the
+ *  possibility of such damages.
+ *
+ *  DISTRIBUTION.
+ *  This sample code can be freely distributed, copied, altered, and
+ *  incorporated into other software, provided that it bears the above
+ *  Copyright notice and DISCLAIMER intact.
+ *
+ */
+
+/*
+ *  NOTE
+ *
+ *     Please read the README file before inspecting this code. It provides
+ *  a content to enhance your understanding of how the Externalization
+ *  Service can be used to your advantage.
+ *
+ *  DESCRIPTION:
+ *
+ *     samobj.idl defines the interfaces of the object (Department)
+ *  used in the Externalization Samples *
+ *
+ */
+
+#include <somdobj.idl>
+#include <somos.idl>
+#include <somestrm.idl>
+
+module OESSample {
+
+interface CompanyCounts : somOS::ServiceBasePRef,
+                          somStream::Streamable  {
+//# --------------------------------------------------------------
+//#   Description
+//#      Define a class whose instances if embedded in other objects are
+//#      externalized as an object reference.  The Externalization Service
+//#      behaves in this way because instances of this class have persistent
+//#      references. Instances of this class have persistent references
+//#      because this class is derived from somOS::ServiceBasePRef.
+//#
+//#      getCount        Returns the number of sales made by the given
+//#                      department.
+//#      valueContainer  Contains the sales counts for each department.
+//#      populate        Defines the objects state.
+//# ---------------------------------------------------------------
+
+
+  void populate();                   //# Define object state
+  long getCount(in long deptNum);    //# Returns the count of sales for the
+                                     //# department indicated by deptNum
+
+
+  #ifdef __SOMIDL__
+  implementation {                   //# Begin SOM specific declarations
+
+     long *valueContainer;           //# Contain sales counts for each dept
+
+     releaseorder   : internalize_from_stream, externalize_to_stream, populate,
+                      init_for_object_creation, uninit_for_object_destruction,
+                      getCount;
+     somDefaultInit :  override, init;
+     somDestruct    :  override;
+//#
+//#   Class implementors that use the Externalization Service must
+//#   over ride the following two methods. An instance of this class
+//#   when externalized involves an implicit invocation of the method
+//#   externalize_to_stream.  When an instance of this class is inter-
+//#   nalized, the internalize method of the stream containing the
+//#   object state calls internalize_from_stream.
+//#
+     internalize_from_stream : override;
+     externalize_to_stream   : override;
+
+//#
+//#   Streamable objects are by definition managed objects -- ie their
+//#   classes are derived from class somOS::ServiceBase.  Managed
+//#   objects have their own constructor and destructor that must be
+//#   over ridden as below.  Init_for_object_creation is called when
+//#   the method somdCreate() is used to create a managed object
+//#   and uninit_for_object_destruction is called when somdDestroy()
+//#   is used to destroy the managed object.
+//#
+     init_for_object_creation      : override;
+     uninit_for_object_destruction : override;
+
+     dllname = "samobj.dll";
+
+
+  }; //# End implementation block
+  #endif //# Implementation
+
+};//# End CompanyCounts interface
+
+
+
+
+interface SalesValues : somStream::Streamable  {
+//# --------------------------------------------------------------
+//#   Description
+//#      This interface provides access to the values for each sale
+//#   made by a given department of Big Kahuna Inc. It is a simulation
+//#   of an object that contains a huge amount of data that is fetched
+//#   into memory of the server process when this object is created.
+//#   It is assumed that most if not all the sales amounts of this
+//#   object are accessed when itis used in processing; therefore, when it is
+//#   externalized the values contained should be streamed into the
+//#   streamIO buffer of the stream.  Because the values are streamed,
+//#   when they internalized into an object local to the processing
+//#   routine access time is minimized because it is a local access.
+//#   Said  another way, the sales amounts are passed by value by the
+//#   Externalization Service.
+//#
+//#   currentValueId  Indicates which value is retrieved. This value is
+//#                   is used to abstract the implementation of how
+//#                   sales are stored in memory.  It serves as an
+//#                   example of a part of an objects state which is
+//#                   not streamed which emphasises that only selected
+//#                   state values need be streamed when the object is
+//#                   externalized.
+//#   valueContainer  Contains sales amounts.
+//#   populate        Define object state
+//#  ---------------------------------------------------------------
+
+   float getSale();       //# Returns a sale from the sale container
+   void populate();       //# Define object state
+
+
+  #ifdef __SOMIDL__
+  implementation {
+
+   long  currentValueId;        //# Will not be streamed
+   float *valueContainer;       //# Values to be stream
+
+     releaseorder   : getSale, populate,
+                      internalize_from_stream, externalize_to_stream,
+                      init_for_object_creation, uninit_for_object_destruction;
+     somDefaultInit :  override, init;
+     somDestruct    :  override;
+//#
+//#   Class implementors that use the Externalization Service must
+//#   over ride the following two methods. An instance of this class
+//#   when externalized involves an implicit invocation of the method
+//#   externalize_to_stream.  When an instance of this class is inter-
+//#   nalized, the internalize method of the stream containing the
+//#   object state calls internalize_from_stream.
+//#
+     internalize_from_stream  : override;
+     externalize_to_stream    : override;
+
+//#
+//#   Streamable objects are by definition managed objects -- ie their
+//#   classes are derived from class somOS::ServiceBase.  Managed
+//#   objects have their own constructor and destructor that must be
+//#   over-ridden as below.  Init_for_object_creation is called after
+//#   the method somdCreate() is used to create a managed object
+//#   and uninit_for_object_destruction is called before somdDestroy()
+//#   is used to destroy the managed object.
+//#
+     init_for_object_creation      : override;
+     uninit_for_object_destruction : override;
+
+     dllname = "samobj.dll";
+
+
+  }; //# End implementation block
+  #endif //# Implementation
+
+};//# End SalesValues interface
+
+
+
+
+interface Department : somStream::Streamable  {
+//# --------------------------------------------------------------
+//#   Description
+//#        Department was declared so that an instance of it can be
+//#    used to demonstrate both pass by value and pass by object
+//#    reference when using the Externalization Service.
+//#
+//#    counts  Embedded object that is passed by object reference
+//#            when externalized.
+//#
+//#    sales   Embedded object that is passed by value when
+//#            externalized.
+//#
+//#    populate()   Define object state
+//#  ---------------------------------------------------------------
+
+  attribute   CompanyCounts  counts;
+  attribute   SalesValues    sales;
+
+  void populate();                           //# Define object state
+
+  #ifdef __SOMIDL__
+  implementation {                //# Begin SOM specific declarations
+
+     somDefaultInit :  override, init;
+     somDestruct    :  override;
+     releaseorder   : _get_counts, _set_counts, _get_sales, _set_sales, populate,
+                      internalize_from_stream, externalize_to_stream,
+                      init_for_object_creation, uninit_for_object_destruction;
+//#
+//#   Class implementors that use the Externalization Service must
+//#   over ride the following two methods. An instance of this class
+//#   when externalized involves an implicit invocation of the method
+//#   externalize_to_stream.  When an instance of this class is inter-
+//#   nalized, the internalize method of the stream containing the
+//#   object state calls internalize_from_stream.
+//#
+     internalize_from_stream : override;
+     externalize_to_stream   : override;
+//#
+//#   Streamable objects are by definition managed objects -- ie their
+//#   classes are derived from class somOS::ServiceBase.  Managed
+//#   objects have their own constructor and destructor that must be
+//#   over-ridden as below.  Init_for_object_creation is called after
+//#   the method somdCreate() is used to create a managed object
+//#   and uninit_for_object_destruction is called before somdDestroy()
+//#   is used to destroy the managed object.
+//#
+     init_for_object_creation      : override;
+     uninit_for_object_destruction : override;
+
+     dllname = "samobj.dll";
+
+  }; //# End implementation block
+  #endif //# Implementation
+
+};//# End Department interface
+
+
+interface VeryBigCo : somStream::Streamable {
+//# --------------------------------------------------------------
+//#   Description
+//#      An instance of this class represents a company.  For our
+//#   sample, instances contain only one department object and one
+//#   count object.  The department object is owned by the
+//#   department and used by the company whereas the count object
+//#   is used by the department but owned by the company.
+//#
+//#   An instance with this interface is created on a server
+//#   remote to it's clients and the embedded department object is
+//#   registered with the Naming Service.  A reference to the
+//#   registered department object can be acquired via the Naming
+//#   Service interface.
+//#  ---------------------------------------------------------------
+
+  readonly attribute   Department dept45;
+
+  void populate();                //# Define Company object state
+
+  #ifdef __SOMIDL__
+  implementation {                //# Begin SOM specific declarations
+
+     CompanyCounts  counts;       //# Shared by all departments.
+
+     somDefaultInit :  override, init;
+     somDestruct    :  override;
+     releaseorder   :  _get_dept45, populate,
+                       init_for_object_creation, uninit_for_object_destruction;
+     dept45         :  noset;
+
+//#   Managed objects have their own constructor and destructor that
+//#   must be over-ridden as below.  Init_for_object_creation is called
+//#   after the method somdCreate() is used to create a managed object
+//#   and uninit_for_object_destruction is called before somdDestroy()
+//#   is used to destroy the managed object.
+//#
+     init_for_object_creation      : override;
+     uninit_for_object_destruction : override;
+
+     passthru C_xih = "#define containerSize 50 "
+                      "#include <somdobj.xh>";
+
+     passthru C_xh  = "#define DEPT45        45";
+
+
+     dllname = "samobj.dll";
+
+  }; //# End implementation block
+  #endif //# Implementation
+
+};//# End VeryBigCo interface
+
+}; //# End of module OESSample
+

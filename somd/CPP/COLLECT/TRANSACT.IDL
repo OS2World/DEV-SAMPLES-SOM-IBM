@@ -1,0 +1,73 @@
+//
+//   COMPONENT_NAME: somx
+//
+//   ORIGINS: 27
+//
+//
+//    25H7912  (C)  COPYRIGHT International Business Machines Corp. 1992,1996,1996  
+//   All Rights Reserved
+//   Licensed Materials - Property of IBM
+//   US Government Users Restricted Rights - Use, duplication or
+//   disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+//
+/*
+ *    @(#)54 1.2 9/20/94 16:18:37 [5/31/95] (c)IBM Corp. 1994
+ */
+
+
+/*
+ *
+ * DISCLAIMER OF WARRANTIES.
+ * The following [enclosed] code is sample code created by IBM
+ * Corporation. This sample code is not part of any standard or IBM
+ * product and is provided to you solely for the purpose of assisting
+ * you in the development of your applications.  The code is provided
+ * "AS IS". IBM MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT
+ * NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE, REGARDING THE FUNCTION OR PERFORMANCE OF
+ * THIS CODE.  IBM shall not be liable for any damages arising out of
+ * your use of the sample code, even if they have been advised of the
+ * possibility of such damages.
+ *
+ * DISTRIBUTION.
+ * This sample code can be freely distributed, copied, altered, and
+ * incorporated into other software, provided that it bears the above
+ * Copyright notice and DISCLAIMER intact.
+ */
+
+#include <somobj.idl>
+#include <somcls.idl>
+#include <mcollect.idl>
+#include <tset.idl>
+#include <mlink.idl>
+#include <thash.idl>
+
+/*
+ * Specifies the details of the last transaction.
+ * We want to maintain a linked list of all the
+ * previous transactions and hence the type somf_TPrimitiveLinkedList
+ */
+
+
+interface trans_info : somf_MLinkable
+{
+          attribute long transaction;  // specifies deposit or withdrawl
+          attribute long amount;       // specifies the amount deposited or withdrawn
+          attribute long date;         // specifies the date and time
+          attribute long curr_bal;     // balance at the time of this transaction
+          attribute long check_num;     // check number used for checking accounts only
+
+#ifdef __SOMIDL__
+
+    implementation  {
+          dllname = "bank.dll";
+          releaseorder: _set_transaction, _get_transaction,
+                        _set_amount, _get_amount,
+                        _set_curr_bal, _get_curr_bal,
+                        _set_check_num, _get_check_num,
+                        _set_date, _get_date;
+    };
+
+#endif
+
+};
